@@ -4,6 +4,7 @@ import { fmtTime, store } from './util.js';
 import { CREDITS_HTML } from './credits.js';
 import { OPTIONS, PRESETS, resolveOptions } from './mathbattle.js';
 import { BESTIARY, NEW_BEAST_IDS, enemyShort } from './bestiary.js';
+import { BATTLE_BACKGROUNDS } from './battlefield.js';
 
 const MATH_HELP = `
   <h2>遊び方</h2>
@@ -87,6 +88,7 @@ export class Menus {
           <h2>数式バトル</h2>
           <p class="quest-desc">行動のひとつひとつに問題と4つの答えがついている。<b>正しい答えをタップした瞬間に、その行動が出る。</b><br>時間は止まらない。敵は予告のあと必ず攻撃してくるので、間に合わなければダメージを受ける。<br><b>スペースキー</b>（または「集中」ボタン）で「集中」＝世界がスローになる（ゲージのぶんだけ。正解すると少し戻る）。</p>
           <label class="math-opt"><span>対戦する敵</span><select class="enemy-choice"><option value="zarva">焔角竜ザルヴァ</option><option value="sektra">熔晶竜セクトラ</option><option value="veira">蒼翼竜ヴェイラ</option>${NEW_BEAST_IDS.map(id => `<option value="${id}">${BESTIARY[id].name}｜${BESTIARY[id].field}</option>`).join('')}</select></label>
+          <label class="math-opt"><span>戦う背景</span><select class="background-choice"><option value="auto">おすすめ（敵に合わせる）</option>${Object.entries(BATTLE_BACKGROUNDS).map(([id,b]) => `<option value="${id}">${b.name}</option>`).join('')}</select></label>
           <div class="math-go">
             <button class="big depart">はじめる</button>
             <div class="diff">難易度：
@@ -110,15 +112,20 @@ export class Menus {
         main.querySelector(`input[name=level][value="${cur.level}"]`).checked = true;
         main.querySelectorAll('[data-o]').forEach(sel => { sel.value = String(cur[sel.dataset.o]); });
         main.querySelector('.enemy-choice').value = cur.enemy;
+        main.querySelector('.background-choice').value = cur.background;
       };
       const save = () => { const o = Object.assign({}, cur); delete o.seed; g.settings.math = o; g.saveSettings(); };
       show();
       main.querySelectorAll('input[name=level]').forEach(r => r.addEventListener('change', () => {
-        if (r.value !== 'custom') cur = resolveOptions({ level: r.value, enemy: cur.enemy });
+        if (r.value !== 'custom') cur = resolveOptions({ level: r.value, enemy: cur.enemy, background: cur.background });
         save(); show();
       }));
       main.querySelector('.enemy-choice').addEventListener('change', e => {
         cur.enemy = e.target.value;
+        save();
+      });
+      main.querySelector('.background-choice').addEventListener('change', e => {
+        cur.background = e.target.value;
         save();
       });
       main.querySelectorAll('[data-o]').forEach(sel => sel.addEventListener('change', () => {

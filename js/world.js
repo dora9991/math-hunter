@@ -706,6 +706,7 @@ export class World {
   // 遺跡の柱・湖の睡蓮など
   _buildExtras() {
     const t = this.terrain, rng = new Rng(4321);
+    this.extras = [];
     const ruins = [['statue_column', -58, 12, 5], ['statue_columnDamaged', -52, 8, 5], ['statue_column', -64, 20, 5], ['statue_obelisk', -30, 12, 4.5], ['statue_columnDamaged', -36, 50, 5]];
     for (const [name, x, z, s] of ruins) {
       const m = propMesh(name, s);
@@ -713,6 +714,7 @@ export class World {
       if (this.rockMat) m.traverse(o => { if (o.isMesh) o.material = this.rockMat; });
       m.position.set(x, t.heightAt(x, z) - 0.2, z); m.rotation.y = rng.range(0, 6.28);
       this.scene.add(m);
+      this.extras.push(m);
       this.colliders.push({ x, z, r: 0.9 });
     }
     const lilies = { lily_large: [], lily_small: [] };
@@ -722,7 +724,7 @@ export class World {
       if (t.waterDepth(x, z) < 0.25) continue;
       (rng.chance(0.5) ? lilies.lily_large : lilies.lily_small).push({ x, y: WATER_LEVEL + 0.01, z, ry: rng.range(0, 6.28), s: rng.range(3.2, 4.5) });
     }
-    for (const [k, list] of Object.entries(lilies)) this._instanceModel(k, list, { cast: false });
+    for (const [k, list] of Object.entries(lilies)) this.extras.push(...this._instanceModel(k, list, { cast: false }));
     // 巣のまわりの倒木
     const nest = [['log_large', 7, 3, 4.2, 0.4], ['log_large', -6, -5, 4.2, 1.9], ['stump_old', 9, -6, 4.5, 0], ['stump_roundDetailed', -9, 6, 4, 0], ['log', 4, 9, 4, 2.6]];
     for (const [name, dx, dz, s, ry] of nest) {
@@ -731,6 +733,7 @@ export class World {
       const x = NEST.x + dx, z = NEST.z + dz;
       m.position.set(x, t.heightAt(x, z) - 0.1, z); m.rotation.y = ry;
       this.scene.add(m);
+      this.extras.push(m);
       this.colliders.push({ x, z, r: name.startsWith('log') ? 1.2 : 0.9 });
     }
   }

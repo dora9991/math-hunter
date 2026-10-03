@@ -543,7 +543,7 @@ function mathtest(game, api) {
     check('個別に変えるとカスタムになる', game.math.opts.level === 'hard' && api.mathStart({ level: 'hard', slowSec: 12 }).opts.level === 'custom');
     game.math.toggleSlow(true); game.tick(1 / 60);
     game.math.finish(false, 'テスト');
-    check('終わると速さが元に戻る', game.timeScale === 1 && game.lastMath.setup.length === 9, game.timeScale);
+    check('終わると速さが元に戻り、背景が記録される', game.timeScale === 1 && game.lastMath.setup.some(([name]) => name === '戦う背景'), game.timeScale);
     // 答え方「数字を打つ」
     api.mathStart({ level: 'normal', input: 'type', seed: 21 });
     c = game.math; run(3.2);

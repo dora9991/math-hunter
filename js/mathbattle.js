@@ -9,7 +9,7 @@ import { SHARPNESS_MAX } from './config.js';
 import { clamp, dampAngle, Rng, TAU, fmtTime, store } from './util.js';
 import { makeProblem, showNum, TOPICS, LEVELS } from './mathproblems.js';
 import { BESTIARY } from './bestiary.js';
-import { buildBattlefield } from './battlefield.js';
+import { BATTLE_BACKGROUNDS, buildBattlefield } from './battlefield.js';
 
 export const TEMPO = {
   // k＝予告の長さの倍率、rest＝攻撃と攻撃の間（秒）
@@ -46,6 +46,7 @@ export function resolveOptions(o = {}) {
   const same = id => Object.keys(OPTIONS).every(k => PRESETS[id][k] === out[k]);
   out.level = ['easy', 'normal', 'hard'].find(same) || 'custom';
   out.enemy = o.enemy === 'sektra' || o.enemy === 'veira' || BESTIARY[o.enemy] ? o.enemy : 'zarva';
+  out.background = BATTLE_BACKGROUNDS[o.background] ? o.background : 'auto';
   if (o.seed) out.seed = o.seed;
   return out;
 }
@@ -168,7 +169,8 @@ export class MathBattle {
       : flying ? [spot(-4.2, 1.7), spot(0, headFwd + 3.1), spot(4.2, 1.7)]
       : [spot(-3.1, 0.9), spot(0, headFwd + 2.0), spot(3.1, 0.9)];
     this.parts = beast || flying ? ['wingR', 'head', 'wingL'] : ['legR', 'head', 'legL'];
-    if (beast) this.battlefield = buildBattlefield(g, beast, A, this.spots);
+    const stage = beast?.stage || ({ zarva: 'lava', sektra: 'lava', veira: 'sky' }[m.variant] || 'lava');
+    this.battlefield = buildBattlefield(g, { stage, area: m.area }, A, this.spots, this.opts.background);
     m.aim = this.spots[1];
     m.startAction('roar');
     // ハンター
@@ -839,7 +841,7 @@ export class MathBattle {
     const topics = Object.entries(st.topics).map(([k, v]) => ({ name: TOPICS[k] || k, n: v.n, miss: v.miss || 0, avg: v.n ? v.time / v.n : 0 }));
     this.result = {
       win, reason, opts: this.opts, level: levelLabel(this.opts.level), time: win ? this.clearTime : this.rt, slowUsed: this.slowUsed,
-      setup: [['対戦相手', g.monster.name], ...(BESTIARY[this.opts.enemy] ? [['フィールド', BESTIARY[this.opts.enemy].field]] : []), ...Object.entries(OPTIONS).map(([k, d]) => [d.label, d.choices.find(c => c[0] === this.opts[k])[1]])],
+      setup: [['対戦相手', g.monster.name], ['戦う背景', BATTLE_BACKGROUNDS[this.battlefield?.backgroundId]?.name || '草原'], ...(BESTIARY[this.opts.enemy] ? [['フィールド', BESTIARY[this.opts.enemy].field]] : []), ...Object.entries(OPTIONS).map(([k, d]) => [d.label, d.choices.find(c => c[0] === this.opts[k])[1]])],
       correct: st.correct, miss: st.miss, rate: total ? Math.round(st.correct / total * 100) : 0,
       avg: st.correct ? st.timeSum / st.correct : 0, maxCombo: st.maxCombo,
       hitsTaken: st.hitsTaken, dodges: st.dodges, sidesteps: st.sidesteps, stopped: st.stopped,

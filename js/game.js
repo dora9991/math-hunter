@@ -105,7 +105,7 @@ export class Game {
     this.goTitle();
     // ?math=1 で、数式バトルから始める
     // 例：?math=1&level=easy ／ ?math=1&slowSec=12&problem=hard
-    if (this.params.has('math')) this.startMathBattle(this.params.has('level') || this.params.has('tempo') || this.params.has('problem') || this.params.has('enemy') ? Object.fromEntries(this.params) : (this.settings.math || {}));
+    if (this.params.has('math')) this.startMathBattle(this.params.has('level') || this.params.has('tempo') || this.params.has('problem') || this.params.has('enemy') || this.params.has('background') ? Object.fromEntries(this.params) : (this.settings.math || {}));
   }
 
   // 画面全体の仕上げ：光のにじみ（ブルーム）と色の調整。画質「軽い」では使わない
