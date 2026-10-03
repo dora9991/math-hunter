@@ -1,0 +1,10 @@
+tests/shots/
+node_modules/
+dist/
+tools/blender/out/*
+!tools/blender/out/*.blend
+.DS_Store
+.claude/
+PROGRESS.md
+__pycache__/
+*.pyc
