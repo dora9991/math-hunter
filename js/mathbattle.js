@@ -825,7 +825,7 @@ export class MathBattle {
     this.clearTime = this.rt;
     g.message('討伐成功！', 'big');
     g.sfx('fanfare');
-    g.audio.bgm(null);
+    if (g.settings.bgm) g.audio.bgm('victory');
   }
   onHunterDown() {
     if (this.endAt) return;
@@ -853,7 +853,7 @@ export class MathBattle {
     g.mode = 'result';
     g.input.captureKeys = false;
     g.overlays.hud.classList.add('hidden');
-    g.audio.bgm(null);
+    if (g.settings.bgm) g.audio.bgm(win ? 'victory' : 'defeat');
     if (!win) g.sfx('fail');
     g.lastMath = this.result;
     // 記録を残す（この端末のブラウザに、直近60回ぶん）

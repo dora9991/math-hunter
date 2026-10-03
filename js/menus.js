@@ -45,10 +45,12 @@ export class Menus {
         <h1>${GAME_TITLE}</h1>
         <div class="title-sub">― 数式で狩れ ―</div>
         <button class="big start">タップ／クリックしてはじめる</button>
+        ${this.game.settings.bgm ? '<button class="ghost music-preview">♪ タイトル曲を聴く</button>' : ''}
         <div class="title-note">問題を解くと、狩人が動く。タップ（クリック）だけで遊べます・音が出ます</div>
       </div>
       <div class="title-foot">非公式のファンメイド作品です ・ 質感の画像：Poly Haven（CC0）／キャンプ用品：Kenney（CC0）・ クレジットは拠点メニューから</div>`);
     el.querySelector('.start').addEventListener('click', () => { this.game.sfx('ui'); this.game.goHome(); });
+    el.querySelector('.music-preview')?.addEventListener('click', () => this.game.audio.start());
   }
 
   home(tab = 'math') {
@@ -80,6 +82,8 @@ export class Menus {
     el.querySelectorAll('.home-side button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
     const main = el.querySelector('.home-main');
     const g = this.game;
+    g.homeTab = tab;
+    if (g.settings.bgm && g.mode === 'home') g.audio.bgm(tab === 'math' ? 'prebattle' : 'menu');
     if (tab === 'math') {
       let cur = resolveOptions(g.settings.math || {});
       main.innerHTML = `

@@ -1,4 +1,6 @@
-// 効果音とBGM（すべて Web Audio で合成。外部の音源ファイルは使わない）
+// 効果音は Web Audio で合成し、BGM はユーザー提供の音源を場面に合わせて再生する。
+import MUSIC_FILES from './musicData.js';
+
 export class Audio {
   constructor() {
     this.ctx = null;
@@ -6,10 +8,15 @@ export class Audio {
     this.bgmVolume = 0.45;
     this.bgmMode = null;
     this.bgmTimer = null;
+    this.music = null;
     this.step = 0;
   }
   start() {
-    if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
+    if (this.ctx) {
+      if (this.ctx.state === 'suspended') this.ctx.resume();
+      if (this.music?.paused && MUSIC_FILES[this.bgmMode]) this._playMusic();
+      return;
+    }
     try {
       const AC = window.AudioContext || window.webkitAudioContext;
       this.ctx = new AC();
@@ -17,10 +24,15 @@ export class Audio {
       this.master.connect(this.ctx.destination);
       this.sfxBus = this.ctx.createGain(); this.sfxBus.connect(this.master);
       this.bgmBus = this.ctx.createGain(); this.bgmBus.gain.value = this.bgmVolume; this.bgmBus.connect(this.master);
+      this.music = document.createElement('audio');
+      this.music.preload = 'none';
+      this.music.playsInline = true;
+      this.ctx.createMediaElementSource(this.music).connect(this.bgmBus);
       const len = this.ctx.sampleRate * 1.5;
       this.noiseBuf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
       const d = this.noiseBuf.getChannelData(0);
       for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      if (MUSIC_FILES[this.bgmMode]) this._playMusic();
     } catch (e) { this.ctx = null; }
   }
   setVolume(v) { this.volume = v; if (this.master) this.master.gain.value = v; }
@@ -103,12 +115,37 @@ export class Audio {
     }
   }
 
-  // BGM：'calm'（拠点・探索）/ 'battle'（戦闘）/ null
+  _playMusic() {
+    const mode = this.bgmMode;
+    if (!this.music || !MUSIC_FILES[mode]) return;
+    if (this.music.dataset.track !== mode) {
+      this.music.pause();
+      this.music.src = MUSIC_FILES[mode];
+      this.music.dataset.track = mode;
+      this.music.loop = true;
+    }
+    // 初回の自動再生が制限された場合は、次のタップ時に start() から再試行する。
+    this.music.play().catch(() => {});
+  }
+
+  // BGM：title/menu/prebattle/battle1/battle3/boss/victory/defeat/null
   bgm(mode) {
-    if (mode === this.bgmMode) return;
+    if (mode === this.bgmMode) {
+      if (this.music?.paused && MUSIC_FILES[mode]) this._playMusic();
+      return;
+    }
     this.bgmMode = mode;
     if (this.bgmTimer) { clearInterval(this.bgmTimer); this.bgmTimer = null; }
+    if (this.music) {
+      this.music.pause();
+      if (!mode || !MUSIC_FILES[mode]) {
+        this.music.removeAttribute('src');
+        this.music.dataset.track = '';
+        this.music.load();
+      }
+    }
     if (!this.ctx || !mode) return;
+    if (MUSIC_FILES[mode]) { this._playMusic(); return; }
     this.step = 0;
     this.nextT = this.ctx.currentTime + 0.1;
     this.bgmTimer = setInterval(() => this._schedule(), 50);

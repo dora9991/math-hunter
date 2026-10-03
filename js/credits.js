@@ -9,7 +9,7 @@ export const CREDITS_HTML = `
   <h3>キャンプ用品・倒木・遺跡の柱・睡蓮</h3>
   <p><b>Kenney「Nature Kit」</b>（www.kenney.nl） ライセンス：CC0（パブリックドメイン）</p>
   <h3>効果音・BGM</h3>
-  <p>Web Audio でその場で合成しています（音声ファイルは使っていません）。</p>
+  <p>効果音は Web Audio で合成。BGM 8曲はユーザー提供の音源をブラウザ向け AAC に変換して使用しています（タイトル、メニュー、戦闘準備、通常戦闘2曲、章ボス、勝利、敗北）。</p>
   <h3>使用ライブラリ</h3>
   <p>three.js（MIT License）© 2010-2025 three.js authors</p>
   <div class="credit-assets"></div>

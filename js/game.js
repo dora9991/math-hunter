@@ -29,6 +29,11 @@ const DIFF = {
   normal: { hp: 1, dmg: 1, speed: 1, label: 'ふつう' },
   hard: { hp: 1.35, dmg: 1.35, speed: 1.12, label: '手ごわい' },
 };
+// 章ボスは専用曲。通常戦闘の難曲は強敵や「むずかしい」で流す仮配置。
+const MUSIC_BOSSES = new Set(['zarva', 'sektra', 'veira', 'galdo', 'barza', 'lunax']);
+const MUSIC_STRONG = new Set(['gradon', 'frostra', 'nebra']);
+const mathBattleMusic = opts => MUSIC_BOSSES.has(opts.enemy) ? 'boss'
+  : opts.problem === 'hard' || MUSIC_STRONG.has(opts.enemy) ? 'battle3' : 'battle1';
 
 // 剥ぎ取りの報酬表
 const CARVE_BODY = [['焔角竜の鱗', 40], ['焔角竜の甲殻', 30], ['焔角竜の牙', 16], ['焔角竜の爪', 11], ['焔竜玉', 3]];
@@ -163,7 +168,10 @@ export class Game {
     const g = this.world.grass;
     if (g) g.count = Math.floor(g.instanceMatrix.count * ({ low: 0.3, mid: 0.6, high: 1 }[s.quality] || 1));
     if (!s.bgm) this.audio.bgm(null);
-    else if (this.mode === 'hunt') this.audio.bgm(this.monster.inCombat ? 'battle' : 'calm');
+    else if (this.mode === 'title') this.audio.bgm('title');
+    else if (this.mode === 'home') this.audio.bgm(this.homeTab === 'math' ? 'prebattle' : 'menu');
+    else if (this.mode === 'hunt') this.audio.bgm(this.math ? mathBattleMusic(this.math.opts) : this.monster.inCombat ? 'battle1' : 'prebattle');
+    else if (this.mode === 'result') this.audio.bgm((this.quest?.math ? this.lastMath?.win : this.quest?.success) ? 'victory' : 'defeat');
     this.resize();
   }
 
@@ -190,7 +198,7 @@ export class Game {
     this._leaveHunt();
     this.monster.resetForDemo();
     this.menus.title();
-    this.audio.bgm(null);
+    this.audio.bgm(this.settings.bgm ? 'title' : null);
   }
   goHome() {
     this.audio.start();
@@ -199,7 +207,6 @@ export class Game {
     this._leaveHunt();
     if (!this.monster.demo) this.monster.resetForDemo();
     this.menus.home();
-    if (this.settings.bgm) this.audio.bgm('calm');
   }
   _leaveHunt() {
     if (this.math) { this.math.dispose(); this.math = null; }
@@ -249,7 +256,7 @@ export class Game {
     if (this.settings.mouseCam) this.input.requestLock();
     this.message('クエスト開始！', 'big');
     setTimeout(() => this.mode === 'hunt' && this.message('キャンプの支給品ボックス（F）で道具を受け取ろう', 'info'), 1500);
-    if (this.settings.bgm) this.audio.bgm('calm');
+    if (this.settings.bgm) this.audio.bgm('prebattle');
     this.renderer.domElement.focus();
   }
 
@@ -277,7 +284,7 @@ export class Game {
     this.hud.last = {};
     this.input.captureKeys = true;
     this.currentHint = '';
-    if (this.settings.bgm) this.audio.bgm('battle');
+    if (this.settings.bgm) this.audio.bgm(mathBattleMusic(this.math.opts));
     this.renderer.domElement.focus();
   }
 
@@ -453,7 +460,7 @@ export class Game {
       success: q.success, reason: q.reason, time: q.success ? q.clearTime : q.time, carts: q.carts,
       money: QUEST.reward, rewards, breaks: q.breaks.map(b => b.name).join('、'),
     });
-    this.audio.bgm(null);
+    if (this.settings.bgm) this.audio.bgm(q.success ? 'victory' : 'defeat');
     this.lastResult = { success: q.success, reason: q.reason, rewards: rewards.map(r => r.name) };
   }
 
@@ -512,7 +519,7 @@ export class Game {
     q.clearTime = q.time;
     this.message('目標を達成しました！', 'big');
     this.sfx('fanfare');
-    this.audio.bgm(null);
+    if (this.settings.bgm) this.audio.bgm('victory');
     setTimeout(() => this.mode === 'hunt' && this.message(`剥ぎ取り時間は${QUEST.carveTime}秒。モンスターに近づいて F`, 'info'), 1800);
   }
   onPartBreak(name, reward) {
@@ -524,8 +531,8 @@ export class Game {
     this.message('尻尾を切断した！', 'good');
     this.sfx('break');
   }
-  onCombatStart() { if (this.settings.bgm && this.mode === 'hunt') this.audio.bgm('battle'); }
-  onCombatEnd() { if (this.settings.bgm && this.mode === 'hunt') this.audio.bgm('calm'); }
+  onCombatStart() { if (this.settings.bgm && this.mode === 'hunt' && !this.math) this.audio.bgm('battle1'); }
+  onCombatEnd() { if (this.settings.bgm && this.mode === 'hunt' && !this.math) this.audio.bgm('prebattle'); }
 
   // ---------- 当たり判定 ----------
   _combat() {

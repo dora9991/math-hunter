@@ -35,29 +35,49 @@ const embedPlugin = {
   },
 };
 
-const result = await build({
-  plugins: [embedPlugin],
-  entryPoints: [r('js/main.js')],
-  bundle: true,
-  format: 'iife',
-  minify: true,
-  write: false,
-  target: 'es2020',
-  legalComments: 'none',
-  logLevel: 'warning',
-});
-const js = result.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
+const audioDir = r('assets/audio');
+const audioFiles = fs.readdirSync(audioDir).filter(f => f.endsWith('.m4a'));
+const embedAudio = {
+  name: 'embed-audio',
+  setup(b) {
+    b.onLoad({ filter: /musicData\.js$/ }, () => ({
+      contents: 'export default ' + JSON.stringify(Object.fromEntries(audioFiles.map(f =>
+        [path.basename(f, '.m4a'), 'data:audio/mp4;base64,' + fs.readFileSync(path.join(audioDir, f)).toString('base64')]))),
+      loader: 'js',
+    }));
+  },
+};
+async function bundle(standalone) {
+  const result = await build({
+    plugins: standalone ? [embedPlugin, embedAudio] : [embedPlugin],
+    entryPoints: [r('js/main.js')],
+    bundle: true,
+    format: 'iife',
+    minify: true,
+    write: false,
+    target: 'es2020',
+    legalComments: 'none',
+    logLevel: 'warning',
+  });
+  return result.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
+}
 const css = fs.readFileSync(r('css/style.css'), 'utf8');
-let html = fs.readFileSync(r('index.html'), 'utf8');
-html = html.replace(/<link rel="stylesheet"[^>]*>/, () => `<style>\n${css}\n</style>`);
-html = html.replace(/<!-- IMPORTMAP -->[\s\S]*?<!-- \/IMPORTMAP -->\n?/, () => '');
-html = html.replace(/<!-- APP -->[\s\S]*?<!-- \/APP -->/, () => `<script>\n${js}\n</script>`);
 const d = new Date(), pad = n => String(n).padStart(2, '0');
 const stamp = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-html = html.replace('<head>', () => `<head>\n<!-- 竜狩りの谷 配布版（${stamp} ビルド）。three.js (MIT) を同梱 -->`);
+function makeHtml(js) {
+  let html = fs.readFileSync(r('index.html'), 'utf8');
+  html = html.replace(/<link rel="stylesheet"[^>]*>/, () => `<style>\n${css}\n</style>`);
+  html = html.replace(/<!-- IMPORTMAP -->[\s\S]*?<!-- \/IMPORTMAP -->\n?/, () => '');
+  html = html.replace(/<!-- APP -->[\s\S]*?<!-- \/APP -->/, () => `<script>\n${js}\n</script>`);
+  return html.replace('<head>', () => `<head>\n<!-- 竜狩りの谷 配布版（${stamp} ビルド）。three.js (MIT) を同梱 -->`);
+}
 fs.mkdirSync(r('dist'), { recursive: true });
-fs.writeFileSync(r('dist/hunter.html'), html);
+const offlineHtml = makeHtml(await bundle(true));
+fs.writeFileSync(r('dist/hunter.html'), offlineHtml);
 fs.mkdirSync(r('docs'), { recursive: true });
-fs.writeFileSync(r('docs/index.html'), html);
+const webHtml = makeHtml(await bundle(false));
+fs.writeFileSync(r('docs/index.html'), webHtml);
 fs.writeFileSync(r('docs/.nojekyll'), '');
-console.log(`dist/hunter.html / docs/index.html ${(html.length / 1024).toFixed(0)} KB`);
+fs.mkdirSync(r('docs/assets/audio'), { recursive: true });
+for (const f of audioFiles) fs.copyFileSync(path.join(audioDir, f), r('docs/assets/audio/' + f));
+console.log(`dist/hunter.html ${(offlineHtml.length / 1024).toFixed(0)} KB / docs/index.html ${(webHtml.length / 1024).toFixed(0)} KB + BGM ${audioFiles.length}曲`);
