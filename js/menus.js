@@ -8,9 +8,9 @@ import { BESTIARY, NEW_BEAST_IDS, enemyShort } from './bestiary.js';
 const MATH_HELP = `
   <h2>遊び方</h2>
   <table>
-    <tr><th>行動する</th><td>カードの問題を解いて、4つの答えから正しいものをタップ（クリック）。その瞬間に行動が出る</td></tr>
+    <tr><th>行動する</th><td>スマホでは画面下の行動を選び、4つの答えから正しいものをタップ。その瞬間に行動が出る</td></tr>
     <tr><th>集中（スロー）</th><td>スペースキー、または左上の「集中」ボタン。ゲージのぶんだけ世界がゆっくりになる</td></tr>
-    <tr><th>一時停止</th><td>Esc キー（止めている間、問題は見えない）</td></tr>
+    <tr><th>一時停止</th><td>スマホでは「一時停止」ボタン、パソコンでは Esc キー</td></tr>
   </table>
   <h3>戦い方</h3>
   <table>
@@ -43,7 +43,7 @@ export class Menus {
         <div class="title-kicker">MATH HUNTING ACTION</div>
         <h1>${GAME_TITLE}</h1>
         <div class="title-sub">― 数式で狩れ ―</div>
-        <button class="big start">クリックしてはじめる</button>
+        <button class="big start">タップ／クリックしてはじめる</button>
         <div class="title-note">問題を解くと、狩人が動く。タップ（クリック）だけで遊べます・音が出ます</div>
       </div>
       <div class="title-foot">非公式のファンメイド作品です ・ 質感の画像：Poly Haven（CC0）／キャンプ用品：Kenney（CC0）・ クレジットは拠点メニューから</div>`);

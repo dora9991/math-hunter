@@ -213,7 +213,7 @@ export class MathBattle {
       <div class="mb-warn hidden"><div class="mb-warn-row"><span class="mb-warn-name"></span><span class="mb-warn-where"></span><span class="mb-warn-sec"></span></div><div class="mb-warn-bar"><i></i></div><div class="mb-warn-tip"></div></div>
       <div class="mb-veil"><span>スロー中</span></div>
       <div class="mb-side"><div class="mb-combo"></div><div class="mb-lane"></div>
-        <div class="mb-focus"><button class="mb-focus-btn">集中<small>スロー／スペース</small></button><div class="mb-focus-bar"><i></i></div><span class="mb-focus-sec"></span></div>
+        <div class="mb-control-row"><div class="mb-focus"><button class="mb-focus-btn">集中<small>スロー／スペース</small></button><div class="mb-focus-bar"><i></i></div><span class="mb-focus-sec"></span></div><button type="button" class="mb-pause" aria-label="一時停止">一時停止</button></div>
       </div>
       <div class="mb-bottom">
         <div class="mb-mobile-actions" role="group" aria-label="行動を選ぶ">${CARDS.map(c => `<button type="button" data-action="${c.id}" aria-label="${c.name}" aria-pressed="${c.id === 'atk'}"><span>${c.mark}</span>${c.name}</button>`).join('')}</div>
@@ -242,6 +242,7 @@ export class MathBattle {
     };
     this.el.focus.classList.toggle('hidden', this.focusMax <= 0);
     $('.mb-focus-btn').addEventListener('click', () => { this.game.audio.start(); this.toggleSlow(); });
+    $('.mb-pause').addEventListener('click', () => this.game.pause());
     this.cards = {};
     this.mobileAction = 'atk';
     for (const c of CARDS) {

@@ -179,8 +179,14 @@ button.on { border-color: var(--gold); background: linear-gradient(#5a4632, #3a2
 .floater.status { color: #ffe9a0; font-size: 15px; }
 
 @media (max-width: 760px) {
-  .home-wrap { flex-direction: column; height: auto; max-height: calc(100vh - 32px); overflow: auto; }
-  .home-side { width: auto; }
+  .home-wrap { flex-direction: column; width: calc(100vw - 16px); height: calc(100dvh - 16px); gap: 8px; }
+  .home-side { width: auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; padding: 9px; }
+  .home-title, .home-stats { grid-column: 1 / -1; margin: 0; }
+  .home-title { font-size: 15px; }
+  .home-stats { font-size: 11px; line-height: 1.2; }
+  .home-side button { min-height: 44px; padding: 4px; font-size: 12px; text-align: center; letter-spacing: 0; }
+  .home-main { min-height: 0; }
+  .home-main .panel { padding: 15px; }
   .bar, .bar.st { width: 180px; }
   .minimap { width: 120px; height: 120px; }
   .set-row label { width: 140px; }
@@ -276,6 +282,8 @@ button.on { border-color: var(--gold); background: linear-gradient(#5a4632, #3a2
 .mb-focus-bar i { display: block; height: 100%; background: linear-gradient(#9ad0ff, #3f86e8); }
 .mb-focus-sec { font-size: 13px; color: #cfe6ff; font-variant-numeric: tabular-nums; }
 .mb-focus.empty .mb-focus-btn { opacity: .45; }
+.mb-control-row { display: flex; align-items: center; gap: 8px; pointer-events: auto; }
+.mb-pause { display: none; }
 .mb-veil { position: absolute; inset: 0; opacity: 0; transition: opacity .18s; box-shadow: inset 0 0 140px 40px rgba(70, 150, 255, .5); background: rgba(40, 90, 170, .1); }
 .mb-veil span { position: absolute; left: 50%; top: 9%; transform: translateX(-50%); font-family: var(--font-title); font-size: 20px; letter-spacing: .5em; color: #d8ecff; text-shadow: 0 0 12px rgba(90,170,255,.9), 0 2px 3px #000; }
 #math.slow .mb-veil { opacity: 1; }
@@ -307,6 +315,7 @@ button.on { border-color: var(--gold); background: linear-gradient(#5a4632, #3a2
   .mb-focus { gap: 5px; }
   .mb-focus-btn { min-height: 44px; padding: 4px 9px; }
   .mb-focus-bar { width: 70px; }
+  .mb-pause { display: block; min-width: 54px; min-height: 44px; padding: 4px 6px; font-size: 12px; touch-action: manipulation; }
   .mb-warn { left: max(10px, env(safe-area-inset-left)); right: max(10px, env(safe-area-inset-right)); top: calc(max(8px, env(safe-area-inset-top)) + 144px); width: auto; padding: 6px 9px; }
   .mb-warn-name { font-size: 16px; }
   .mb-warn-where, .mb-warn-tip { font-size: 12px; }
