@@ -20,6 +20,7 @@ import { Menus } from './menus.js';
 import { calcDamage, isBounce, bladeVsHitboxes, shapeHitsHunter } from './combat.js';
 import { GREATSWORD } from './weapons.js';
 import { MathBattle } from './mathbattle.js';
+import { Adventure, QUESTS, CHAPTERS } from './adventure.js';
 
 const DEFAULT_SETTINGS = { sensitivity: 1, invertY: false, mouseCam: true, volume: 0.7, bgm: true, quality: 'mid', bloom: false, numbers: true, monsterHp: false, difficulty: 'normal', weapon: 'gs' };
 // 画質ごとの「描く画素数」の上限（Retina で全画面にしても重くなりすぎないように）
@@ -69,6 +70,8 @@ export class Game {
     this.world = new World(this.scene, r, 'high');
     this.fx = new FX(this.scene, this.camera, overlays.fx);
     this.audio = new Audio();
+    this.adventure = new Adventure();
+    this.activeAdventure = null;
     this.items = new Items(this);
     this.input = new Input(r.domElement);
     this.camRig = new CameraRig(this.camera, this.world.terrain);
@@ -169,8 +172,8 @@ export class Game {
     if (g) g.count = Math.floor(g.instanceMatrix.count * ({ low: 0.3, mid: 0.6, high: 1 }[s.quality] || 1));
     if (!s.bgm) this.audio.bgm(null);
     else if (this.mode === 'title') this.audio.bgm('title');
-    else if (this.mode === 'home') this.audio.bgm(this.homeTab === 'math' ? 'prebattle' : 'menu');
-    else if (this.mode === 'hunt') this.audio.bgm(this.math ? mathBattleMusic(this.math.opts) : this.monster.inCombat ? 'battle1' : 'prebattle');
+    else if (this.mode === 'home') this.audio.bgm(['math', 'quest'].includes(this.homeTab) ? 'prebattle' : 'menu');
+    else if (this.mode === 'hunt') this.audio.bgm(this.math ? this.activeAdventure?.boss ? 'boss' : mathBattleMusic(this.math.opts) : this.monster.inCombat ? 'battle1' : 'prebattle');
     else if (this.mode === 'result') this.audio.bgm((this.quest?.math ? this.lastMath?.win : this.quest?.success) ? 'victory' : 'defeat');
     this.resize();
   }
@@ -200,16 +203,18 @@ export class Game {
     this.menus.title();
     this.audio.bgm(this.settings.bgm ? 'title' : null);
   }
-  goHome() {
+  goHome(tab = 'village') {
     this.audio.start();
     this.mode = 'home';
     this.paused = false;
     this._leaveHunt();
     if (!this.monster.demo) this.monster.resetForDemo();
-    this.menus.home();
+    this.menus.home(tab);
+    if (!this.noRecord) this.menus.adventureUI.showArrival();
   }
   _leaveHunt() {
     if (this.math) { this.math.dispose(); this.math = null; }
+    this.activeAdventure = null;
     this.overlays.hud.classList.remove('math');
     this.overlays.hud.classList.add('hidden');
     this.input.captureKeys = false;
@@ -261,9 +266,18 @@ export class Game {
   }
 
   // 数式バトル（実験）：問題を解くと行動できる。敵は止まらない
-  startMathBattle(opts = {}) {
+  startAdventureQuest(id) {
+    const q = QUESTS.find(q => q.id === id);
+    const run = this.adventure.prepareRun(id);
+    if (!q || !run) return false;
+    this.startMathBattle({ level: this.adventure.state.difficulty, enemy: q.enemy, background: q.background || CHAPTERS[q.chapter].id }, run);
+    return true;
+  }
+
+  startMathBattle(opts = {}, expedition = null) {
     this.audio.start();
     this._leaveHunt();
+    this.activeAdventure = expedition;
     this.monster.setVariant(opts.enemy);
     this.diff = DIFF.normal;
     this.quest = { time: 0, timeLimit: 15 * 60, carts: 0, maxCarts: 1, rewards: [], breaks: [], ended: false, cleared: false, stats: { hits: 0, dmg: 0 }, math: true };
@@ -284,7 +298,7 @@ export class Game {
     this.hud.last = {};
     this.input.captureKeys = true;
     this.currentHint = '';
-    if (this.settings.bgm) this.audio.bgm(mathBattleMusic(this.math.opts));
+    if (this.settings.bgm) this.audio.bgm(expedition?.boss ? 'boss' : mathBattleMusic(this.math.opts));
     this.renderer.domElement.focus();
   }
 
@@ -571,7 +585,7 @@ export class Game {
     const sleepBonus = m.sleeping;
     const dmg = calcDamage(h.W.def.attack, h.curMv, sm, zone, (sleepBonus ? 2 : 1) * (h.spiritFull ? 1.1 : 1));
     const heavy = (charged && lv >= 2 && lv !== 4) || mv.id === 'ls_round' || (mv.hits && h.winIdx === mv.hits.length - 1);
-    m.receiveHit({ part, damage: dmg, point: hit.point, bounce, charged: heavy, from: h.pos });
+    m.receiveHit({ part, damage: dmg, partDamage: dmg * (this.math?.expedition?.effects.parts || 1), point: hit.point, bounce, charged: heavy, from: h.pos });
     this.lastHit = { dmg, part, zone, bounce, sleep: sleepBonus };
     const hs = mv.hitstop * (charged ? [1, 1.25, 1.6, 2.2, 1.3][lv] : 1);
     h.onHit({ bounce, hitstop: hs });

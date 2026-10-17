@@ -497,7 +497,7 @@ function mathtest(game, api) {
     game.menus.home('record');
     check('記録の画面に出る', document.querySelector('.home-main').textContent.includes('最近のバトル') && document.querySelector('.home-stats').textContent.includes('討伐 1 回'));
     game.menus.home();
-    check('拠点は数式バトルだけ（ふつうの狩りの入口はない）', !!document.querySelector('.home-main .math-opts') && !document.querySelector('[data-tab="quest"]') && !document.querySelector('[data-tab="equip"]'));
+    check('拠点から村・世界地図・自由狩猟へ進める', !!document.querySelector('.home-main .village-page') && !!document.querySelector('[data-tab="map"]') && !!document.querySelector('[data-tab="math"]'));
     check('拠点に戻ると台本が外れる', !game.math && !m.scripted && !m.aim && !document.getElementById('math') && h.moveMul === 1);
     api.start(); run(0.5);
     check('ふつうの狩りが始められる', game.mode === 'hunt' && !game.math && !game.overlays.hud.classList.contains('math'));

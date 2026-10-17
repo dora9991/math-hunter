@@ -45,6 +45,7 @@ export class Hunter {
   }
 
   reset() {
+    this.maxHp = HUNTER.maxHp;
     this.hp = HUNTER.maxHp; this.red = 0; this.regenDelay = 0;
     this.stamina = HUNTER.maxStamina; this.staminaDelay = 0; this.exhaustLock = false;
     this.sharp = SHARPNESS_MAX;

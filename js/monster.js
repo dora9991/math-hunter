@@ -561,11 +561,11 @@ export class Monster {
     if (this.hp <= 0) { this.hp = 0; this._die(); return; }
     // 尻尾切断
     if (hit.part === 'tail' && !this.tailCut) {
-      this.tailDmg += hit.damage;
+      this.tailDmg += hit.partDamage ?? hit.damage;
       if (this.tailDmg >= pdef.cutAt) this._cutTail();
     }
     // 怯み・転倒・部位破壊
-    this.partDmg[hit.part] = (this.partDmg[hit.part] || 0) + hit.damage;
+    this.partDmg[hit.part] = (this.partDmg[hit.part] || 0) + (hit.partDamage ?? hit.damage);
     const need = pdef.flinch * (pdef.trip ? this.tripBonus : 1) * (this.flinchScale ? this.flinchScale[hit.part] ?? 1 : 1);
     const canInterrupt = !['topple', 'dead', 'trapped', 'sleep'].includes(this.state) && this.air < 0.5;
     if (this.partDmg[hit.part] >= need) {

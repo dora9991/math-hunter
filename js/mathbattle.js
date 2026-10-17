@@ -10,6 +10,7 @@ import { clamp, dampAngle, Rng, TAU, fmtTime, store } from './util.js';
 import { makeProblem, showNum, TOPICS, LEVELS } from './mathproblems.js';
 import { BESTIARY } from './bestiary.js';
 import { BATTLE_BACKGROUNDS, buildBattlefield } from './battlefield.js';
+import { QUESTS, EQUIPMENT } from './adventure.js';
 
 export const TEMPO = {
   // k＝予告の長さの倍率、rest＝攻撃と攻撃の間（秒）
@@ -102,6 +103,8 @@ function groundRing(T, cx, cz, r0, r1, mat, seg = 40) {
 export class MathBattle {
   constructor(game, opts = {}) {
     this.game = game;
+    this.expedition = game.activeAdventure;
+    this.attacksSeen = new Set();
     opts = this.opts = resolveOptions(opts);
     this.tempo = TEMPO[opts.tempo];
     this.level = LEVELS[opts.problem];
@@ -110,7 +113,7 @@ export class MathBattle {
     this.t = 0;                // ゲーム内の時間（スロー中はゆっくり進む）
     this.rt = 0;               // 実際の時間
     // スロー（集中）：ゲージのぶんだけ世界がゆっくりになる。正解すると少し戻る
-    this.focusMax = opts.slowSec; this.focus = opts.slowSec;
+    this.focusMax = opts.slowSec > 0 ? opts.slowSec + (this.expedition?.effects.focus || 0) : 0; this.focus = this.focusMax;
     this.slow = false; this.slowManual = false; this.slowUsed = 0;
     this.lane = 1;
     this.buf = '';
@@ -118,7 +121,7 @@ export class MathBattle {
     this.combo = 0;
     this.counter = false;      // 回避に成功した直後は次の一撃が強い
     this.armed = false;        // 回避の問題を解いてある（当たる瞬間に自動で避ける）
-    this.potions = 3;
+    this.potions = 3 + (this.expedition?.effects.potions || 0);
     this.queue = [];           // 実行待ちの攻撃
     this.swing = null;         // いま振っている攻撃（当たる瞬間に結果を出す）
     this.wantRoll = false;
@@ -129,12 +132,13 @@ export class MathBattle {
     this.it = game._blankIntent();
     this.blank = game._blankIntent();
     this._placeActors();
+    if (this.expedition) { game.hunter.maxHp += this.expedition.effects.hp; game.hunter.hp = game.hunter.maxHp; }
     this._buildMarkers();
     this._buildUI();
     for (const c of CARDS) if (c.id !== 'dodge') this._newProblem(c.id);
     this._onKey = e => this._key(e);
     window.addEventListener('keydown', this._onKey, true);
-    game.message('数式バトル 開始！', 'big');
+    game.message(this.expedition ? `${QUESTS.find(q => q.id === this.expedition.questId).name} 開始！` : '数式バトル 開始！', 'big');
   }
 
   // ---------- 配置 ----------
@@ -409,7 +413,7 @@ export class MathBattle {
     return on;
   }
 
-  _mult() { return (1 + Math.min(this.combo, 10) * 0.05) * (this.counter ? 1.5 : 1); }
+  _mult() { return (1 + Math.min(this.combo, 10) * 0.05) * (this.counter ? this.expedition?.effects.counter || 1.5 : 1) * (this.expedition?.effects.damage || 1); }
 
   _enabled(c) {
     const h = this.game.hunter, E = this.enemy;
@@ -721,6 +725,7 @@ export class MathBattle {
         : this.rng.weighted([['stomp', 4.5], ['tailSpin', strong * 1.2]]);
     }
     const def = ENEMY[id];
+    this.attacksSeen.add(def.name);
     const beastLanes = def.beast ? def.pattern === 'all' ? [0,1,2]
       : def.pattern === 'center' ? [1]
       : def.pattern === 'sides' ? [0,2]
@@ -846,7 +851,13 @@ export class MathBattle {
       avg: st.correct ? st.timeSum / st.correct : 0, maxCombo: st.maxCombo,
       hitsTaken: st.hitsTaken, dodges: st.dodges, sidesteps: st.sidesteps, stopped: st.stopped,
       missed: st.missed.slice(), damage: Math.round(st.damage), monsterLeft: Math.round(Math.max(0, g.monster.hp) / g.monster.maxHp * 100), topics,
+      attacks: [...this.attacksSeen], breaks: (g.quest?.breaks || []).map(b => b.name),
     };
+    if (this.expedition) {
+      const gear = EQUIPMENT.find(e => e.id === this.expedition.equipment);
+      this.result.setup.push(['装具', gear.name], ['調査・村の支援', `集中 +${this.expedition.effects.focus}秒 ／ 部位蓄積 ×${this.expedition.effects.parts.toFixed(2)}`]);
+      if (!g.noRecord) this.result.adventure = g.adventure.finishRun(this.expedition, this.result);
+    }
     this.root.classList.add('hidden');
     this.markers.visible = false;
     this.slow = false; g.timeScale = g.forcedTimeScale || 1;

@@ -1,0 +1,256 @@
+/* 冒険の拠点：村、世界地図、調査と装具。 */
+.screen.home.adventure-home { background: radial-gradient(ellipse at 85% 10%, #38594c80, transparent 55%), #0d1c1bf2; --adv-line: #9ab69b30; --adv-dim: #a4b4a2; }
+.adventure-home .home-wrap { width: min(1450px, calc(100vw - 40px)); height: calc(100dvh - 40px); max-height: 1000px; gap: 0; border: 1px solid #b7c3a333; box-shadow: 0 24px 90px #0006; }
+.adventure-home .home-side { width: 214px; padding: 24px 18px 16px; background: #142421f5; border: 0; border-right: 1px solid var(--adv-line); gap: 10px; overflow: auto; }
+.adventure-brand { display: flex; gap: 11px; align-items: center; padding: 0 0 23px; border-bottom: 1px solid var(--adv-line); }
+.brand-crest { font-size: 42px; color: #d9c58b; font-family: serif; }
+.adventure-brand small { display: block; font-size: 8px; letter-spacing: .23em; color: #b5b88f; }
+.adventure-home .home-title { margin: 5px 0 4px; font-size: 19px; color: #eee6ca; letter-spacing: 0; white-space: nowrap; }
+.adventure-brand div > span { font-size: 10px; color: #94a89b; }
+.adventure-nav { display: flex; flex-direction: column; gap: 5px; }
+.adventure-nav button { border: 1px solid transparent; background: none; border-radius: 4px; color: #a9b7a9; min-height: 36px; padding: 7px 13px; font-size: 12px; letter-spacing: .03em; }
+.adventure-nav button i { display: inline-block; font-style: normal; width: 24px; font-size: 17px; color: #afbfaa; }
+.adventure-nav button:nth-child(6) { margin-top: 8px; }
+.adventure-nav button.on { background: linear-gradient(100deg, #78937232, #78937208); border-color: #c3c69840; color: #f1e6c6; }
+.adventure-nav button.on i { color: #e1c58d; }
+.adventure-nav button:hover { background: #8aab8d14; color: #f5edd5; }
+.adventure-side-status { margin-top: auto; padding: 20px 5px 0; border-top: 1px solid var(--adv-line); }
+.adventure-side-status > small { font-size: 8px; letter-spacing: .16em; color: #9aaf9b; }
+.adventure-side-status strong { display: block; font: 26px var(--font-title); margin: 10px 0; color: #efddae; }
+.adventure-side-status strong span { font: 10px var(--font); color: #a7b3a1; }
+.adventure-side-status > div { height: 3px; background: #aabca221; }
+.adventure-side-status i { display: block; height: 100%; background: #ccb27c; }
+.adventure-side-status p { color: #ebd49b; font-size: 16px; margin: 16px 0 0; }
+.adventure-side-status p span { color: #96a596; font-size: 10px; margin-left: 4px; }
+.adventure-home .home-stats { margin: 0 5px; font-size: 10px; color: #7f9688; }
+.adventure-side-foot { display: flex; gap: 6px; }
+.adventure-side-foot button { padding: 4px 0; border: 0; font-size: 9px; flex: 1; text-align: center; }
+.adventure-home .home-main { min-width: 0; background: #192e28; scrollbar-width: thin; scrollbar-color: #8f9e7b44 transparent; scroll-padding: 12px 0 155px; }
+.adventure-home .home-main > .panel, .adventure-home .home-main > .quest-card { border: 0; background: #14252090; padding: 28px; }
+.village-page, .atlas-page, .chapter-page, .quest-prep, .workshop-page, .journal-page { padding: 28px 32px 24px; }
+.eyebrow { color: #c8b783; font-size: 9px; font-weight: 600; letter-spacing: .2em; line-height: 1.6; }
+.adv-heading { margin-bottom: 22px; }
+.adv-heading h2 { margin: 8px 0 9px; font-size: clamp(25px, 2.5vw, 34px); letter-spacing: .07em; color: #f0e6c9; }
+.adv-heading p { margin: 0; color: var(--adv-dim); font-size: 12px; line-height: 1.8; }
+.adventure-home h3 { font-family: var(--font-title); font-weight: 500; color: #eae2c9; }
+.village-view { position: relative; border: 1px solid #d6ddae40; border-radius: 6px; overflow: hidden; background: #849f77; }
+.village-art { display: block; width: 100%; height: clamp(240px, 34vh, 340px); }
+.village-location { position: absolute; left: 18px; top: 16px; padding: 8px 11px; background: #1a3228bc; border: 1px solid #d5d7af33; border-radius: 3px; font-size: 10px; color: #f0e5bf; letter-spacing: .06em; }
+.live-dot { display: inline-block; width: 5px; height: 5px; background: #d4d991; border-radius: 50%; vertical-align: middle; margin-right: 6px; box-shadow: 0 0 10px #ffec99; }
+.village-spot { position: absolute; transform: translate(-50%, -20%); white-space: nowrap; font-size: 9px; padding: 7px 9px; background: #2a4035d9; border: 1px solid #b8c29b69; color: #bdc3a4; box-shadow: 0 3px 10px #0002; }
+.village-spot i { display: inline-block; width: 5px; height: 5px; border: 1px solid #a4af8e; transform: rotate(45deg); margin-right: 6px; }
+.village-spot.built { border-color: #e4ce93ac; background: #273f32eb; color: #fff0c4; }
+.village-spot.built i { background: #ead296; border-color: #ead296; }
+.village-bottom { display: grid; grid-template-columns: 1.5fr 1fr; margin: 22px 0; gap: 20px; }
+.next-request { padding-right: 22px; border-right: 1px solid var(--adv-line); }
+.next-request h3, .village-progress h3 { font-size: 21px; margin: 9px 0 10px; }
+.next-request p, .village-progress p { font-size: 12px; color: var(--adv-dim); line-height: 1.9; margin: 0 0 13px; }
+.primary { display: inline-flex; align-items: center; justify-content: center; gap: 20px; min-height: 46px; padding: 12px 20px; border: 1px solid #d0ba84; background: linear-gradient(110deg, #d9c394, #b8a172); color: #23382d; font-size: 13px; font-weight: 700; border-radius: 3px; box-shadow: 0 4px 16px #0002; }
+.primary:hover { background: linear-gradient(110deg, #e8d6ad, #cfb789); color: #142b23; border-color: #f0deb1; }
+.primary span, .primary b { margin-left: auto; }
+.text-btn { border: 0; background: transparent; padding: 6px 0; color: #d1c193; font-size: 12px; box-shadow: none; text-align: left; }
+.text-btn:hover { background: transparent; color: #f6dfaa; }
+.village-progress h3 { display: flex; justify-content: space-between; align-items: center; font-size: 17px; }
+.village-progress h3 b { font: 25px var(--font-title); color: #d6c68d; }
+.village-progress h3 small { font-size: 13px; color: #8ba28e; }
+.restoration-steps { display: flex; gap: 6px; margin: 13px 0; }
+.restoration-steps span { flex: 1; height: 5px; background: #aabf9e20; }
+.restoration-steps span.done { background: #9caf7b; }
+.people-row { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--adv-line); padding-top: 20px; gap: 12px; }
+.person-card { display: flex; align-items: center; gap: 10px; text-align: left; padding: 10px; background: #91ad8720; border-color: transparent; border-radius: 4px; }
+.person-card:hover { background: #91ad8730; border-color: #a8bb8d40; }
+.portrait { display: inline-block; width: 53px; height: 53px; flex-shrink: 0; }
+.portrait svg { display: block; width: 100%; height: 100%; }
+.person-card small, .person-card b, .person-card em { display: block; }
+.person-card small { font-size: 8px; color: #91a797; font-weight: 400; }
+.person-card b { font-size: 12px; margin: 4px 0; font-weight: 500; }
+.person-card em { font-size: 9px; color: #d6c38c; font-style: normal; }
+.save-note { color: #7e9886; font-size: 10px; line-height: 1.8; margin: 19px 0 0; }
+.journey-progress { display: flex; align-items: center; gap: 14px; color: #a7b8a4; font-size: 11px; padding: 0 0 23px; }
+.journey-progress > div { flex: 1; height: 4px; background: #afbf9d22; }
+.journey-progress i { display: block; height: 100%; background: #c1b683; }
+.journey-progress b { font-weight: 400; }
+.chapter-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.chapter-card { position: relative; padding: 0; overflow: hidden; text-align: left; background: #203930; border: 1px solid #c0c99c3b; border-radius: 5px; }
+.chapter-card:hover { transform: translateY(-2px); border-color: var(--chapter-color); background: #233f34; }
+.chapter-card .land-art { display: block; width: 100%; opacity: .9; }
+.chapter-number { position: absolute; top: 12px; left: 16px; color: #fff9d7d9; font: 34px var(--font-title); text-shadow: 0 2px 6px #0003; }
+.chapter-copy { padding: 18px; }
+.chapter-copy small { font-size: 9px; color: var(--chapter-color); letter-spacing: .08em; }
+.chapter-copy h3 { font-size: 20px; margin: 9px 0 6px; }
+.chapter-copy p { font-size: 11px; color: #a7b6a2; margin: 0; }
+.chapter-arrow { position: absolute; right: 20px; bottom: 22px; color: var(--chapter-color); font-size: 20px; }
+.chapter-card.locked { opacity: .43; filter: saturate(.4); cursor: default; }
+.chapter-card.cleared { border-color: #b8bf7e91; }
+.adventure-home button:disabled { cursor: default; opacity: .48; transform: none; }
+.adventure-home .chapter-card.locked:disabled { opacity: .43; }
+.region-banner { position: relative; overflow: hidden; border-radius: 4px; margin: 15px 0 24px; border: 1px solid #e3d9ab33; }
+.region-banner .land-art { display: block; width: 100%; height: 250px; object-fit: cover; }
+.region-banner:after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg,#172e29ef, transparent 80%); pointer-events: none; }
+.region-banner > div { position: absolute; bottom: 22px; left: 25px; right: 22px; z-index: 1; }
+.region-banner h2 { font-size: 29px; margin: 8px 0 10px; color: #fff1cf; }
+.region-banner p { font-size: 12px; margin: 0; color: #d0d5ba; line-height: 1.8; }
+.region-banner .eyebrow { color: #f2d5a2; }
+.region-banner.compact .land-art { height: 200px; }
+.quest-list { display: flex; flex-direction: column; gap: 12px; }
+.quest-entry { display: flex; gap: 18px; align-items: center; padding: 21px; text-align: left; border-color: #a1b18a45; background: #8cae8620; }
+.quest-entry:hover { background: #8cae8630; }
+.quest-step { width: 42px; height: 42px; border: 1px solid #c2c49165; display: grid; place-items: center; color: #e7d9a6; font: 20px var(--font-title); border-radius: 50%; flex-shrink: 0; }
+.quest-entry-copy { flex: 1; }
+.quest-entry-copy small { display: block; color: #a7b18c; font-size: 8px; letter-spacing: .12em; }
+.quest-entry-copy b { display: block; font: 20px var(--font-title); margin: 8px 0; }
+.quest-entry-copy em { font-size: 11px; color: #96af99; font-style: normal; }
+.quest-brief, .smith-note { display: flex; gap: 15px; align-items: center; background: #87a88816; padding: 16px; border-left: 2px solid #8caa82; margin: 0 0 24px; }
+.quest-brief small { font-size: 10px; color: #c6bc91; }
+.quest-brief p, .smith-note p { margin: 6px 0 0; color: #c6d0b9; font-size: 12px; line-height: 1.9; }
+.field-guide { border-bottom: 1px solid var(--adv-line); padding: 0 0 17px; color: #b9c3a7; font-size: 11px; line-height: 1.9; }
+.field-guide summary { cursor: pointer; color: #c9bd8e; }
+.field-guide p { margin: 10px 0 0; }
+.section-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 20px 0 13px; }
+.section-title h3 { font-size: 17px; margin: 0; }
+.section-title > span { font-size: 10px; color: #9eaf99; }
+.research-sites { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.research-card { display: flex; text-align: left; gap: 12px; align-items: center; background: #8caa7e12; border: 1px solid #9bad8345; padding: 16px 13px; }
+.research-card:hover { background: #8caa7e25; }
+.research-symbol { color: #cfc18d; font-size: 28px; }
+.research-card div { flex: 1; }
+.research-card small { color: #9baf98; font-size: 8px; letter-spacing: .12em; }
+.research-card b { display: block; font-size: 13px; margin: 6px 0; font-weight: 500; }
+.research-card p { font-size: 10px; color: #97ad98; line-height: 1.6; margin: 0; }
+.research-card em { color: #c9ba85; font-style: normal; }
+.research-card.recorded { border-color: #a2ba7b94; background: #9db67b16; }
+.prep-bottom { display: grid; grid-template-columns: 1.15fr 1fr; gap: 25px; margin: 14px 0 25px; }
+.loadout-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.loadout-options button { border-color: #a1b58a40; background: #1c332b; padding: 10px; font-size: 11px; }
+.loadout-options i { display: inline-block; width: 6px; height: 6px; transform: rotate(45deg); margin: 0 6px 1px 0; }
+.loadout-options button span { font-size: 8px; color: #d9ce96; margin-left: 9px; }
+.adventure-home .selected { border-color: #c5bb81; background: #bac48d18; color: #f2e1ae; }
+.loadout-description { font-size: 11px; line-height: 1.9; color: #9baf98; }
+.quest-rewards { border-left: 1px solid var(--adv-line); padding: 20px 0 0 24px; }
+.quest-rewards h3 { margin: 8px 0 14px; font-size: 17px; }
+.quest-rewards > small { color: #8ca58e; font-size: 9px; line-height: 1.8; display: block; margin-top: 12px; }
+.materials { display: flex; flex-wrap: wrap; gap: 10px 13px; }
+.material { display: inline-flex; align-items: center; gap: 5px; color: #acbea3; font-size: 10px; white-space: nowrap; }
+.material b { color: #e4d8ae; font-weight: 500; margin-left: 2px; }
+.material i { width: 6px; height: 6px; background: #9aafa2; transform: rotate(45deg); }
+.material.marks i { background: #d2b879; border-radius: 50%; }.material.crystal i { background: #80c3bd; }.material.wood i { background: #b49472; }
+.expedition-bar { position: sticky; bottom: -24px; display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 18px 0; border-top: 1px solid #b7bd8c55; background: #192e28f5; z-index: 2; }
+.expedition-bar label { color: #b8c2a7; font-size: 11px; }
+.expedition-bar select { margin-left: 8px; color: #e7dfbf; font-size: 12px; background: #243b30; border: 1px solid #9eac7c6b; border-radius: 3px; padding: 9px 7px; }
+.expedition-bar > span { color: #7e9a83; font-size: 9px; flex: 1; }
+.expedition-bar .primary { min-width: 240px; }
+.inventory { border: 1px solid #a6bc8f33; background: #0f241b50; padding: 15px; margin: 0 0 22px; }
+.inventory .material { font-size: 11px; }
+.equipment-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.equipment-card { position: relative; padding: 24px; background: linear-gradient(145deg,#a0b38c15,#0d251b25); border: 1px solid #9db28c3b; border-radius: 4px; }
+.equipment-card.equipped { border-color: #c7c28d9c; }
+.equipment-symbol { color: var(--gear-color); font-family: serif; font-size: 48px; margin-bottom: 13px; line-height: 1.3; }
+.equipment-card .eyebrow { color: var(--gear-color); }
+.equipment-card h3 { margin: 9px 0 10px; font-size: 22px; }
+.equipment-card > p { font-size: 11px; line-height: 1.8; color: #9eaf9c; }
+.equipment-effect { color: #d2d5b4; font-size: 12px; line-height: 1.8; margin: 15px 0; min-height: 43px; }
+.gear-cost { padding: 13px 0; border-top: 1px solid var(--adv-line); min-height: 57px; font-size: 10px; color: #7e9a86; }
+.equipment-card > button { width: 100%; border-color: #afb38465; background: #acb7851a; font-size: 12px; min-height: 44px; }
+.equipment-card > button:disabled { opacity: .5; }
+.journal-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 15px; }
+.journal-entry { display: flex; gap: 17px; align-items: flex-start; padding: 20px; border: 1px solid #96ac852b; background: #9cb48d0c; border-radius: 4px; }
+.journal-entry:not(.discovered) { opacity: .5; min-height: 140px; }
+.journal-crest { flex-shrink: 0; width: 40px; height: 47px; color: var(--chapter-color); border: 1px solid; display: grid; place-items: center; font: 22px var(--font-title); border-radius: 50% 50% 40% 40%; }
+.journal-details small { color: #a4b398; font-size: 9px; }
+.journal-details h3 { font-size: 17px; margin: 6px 0 12px; }
+.journal-stats { font-size: 10px; color: #d3c48e; }
+.journal-details p { color: #92aa96; font-size: 10px; line-height: 1.9; }
+.journal-details summary { color: #bac39e; cursor: pointer; font-size: 11px; margin-top: 12px; }
+.adventure-reward { margin: 18px 0 22px; padding: 18px; background: #789a6e16; border: 1px solid #a8b57b4a; text-align: left; }
+.adventure-reward h3 { font-family: var(--font-title); font-size: 19px; margin: 8px 0 17px; }
+.adventure-reward .eyebrow { letter-spacing: .07em; font-size: 8px; }
+.adventure-reward p { font-size: 12px; color: #c1c8a7; line-height: 1.8; }
+.facility-unlocked { margin-top: 15px; padding-top: 14px; border-top: 1px solid #afbc8140; color: #ead095; font-size: 15px; }
+.facility-unlocked small { display: block; color: #b8c5a2; font-size: 11px; margin-top: 7px; }
+.adv-dialog-backdrop { position: absolute; inset: 0; z-index: 25; display: flex; align-items: center; justify-content: center; background: #071510c9; backdrop-filter: blur(3px); padding: 20px; }
+.adv-dialog { position: relative; max-width: 570px; width: 100%; max-height: calc(100dvh - 40px); overflow: auto; padding: 32px; background: linear-gradient(130deg,#293f33,#172d25); border: 1px solid #c7c18a80; box-shadow: 0 20px 80px #0007; border-radius: 5px; color: #e8e0c2; }
+.adv-dialog h2 { font-family: var(--font-title); font-size: 25px; line-height: 1.6; margin: 14px 0; padding-right: 18px; }
+.adv-dialog p { font-size: 14px; line-height: 1.9; color: #c9d1b8; }
+.dialog-close { position: absolute; right: 10px; top: 8px; font-size: 22px; padding: 0; width: 38px; height: 38px; background: transparent; border-color: transparent; color: #9db399; z-index: 1; }
+.dialogue-person { display: flex; align-items: center; gap: 13px; padding: 0 20px 20px 0; border-bottom: 1px solid #bac89930; }
+.dialogue-person div { flex: 1; }
+.dialogue-person small { display: block; font-size: 9px; color: #9eb299; margin-bottom: 6px; }
+.dialogue-person b { font-size: 14px; font-weight: 500; }
+.dialogue-person > span:last-child { font-size: 10px; color: #90a68e; }
+.dialogue-copy { margin: 20px 0 25px; min-height: 120px; }
+.dialogue-buttons { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.clue-sketch { display: flex; align-items: center; gap: 25px; padding: 18px 0; color: #c6be89; font-size: 47px; }
+.clue-sketch i { flex: 1; border-top: 1px dashed #9db88777; }
+.research-benefit { font-size: 12px; padding: 13px; margin: 20px 0; border: 1px solid #a3bc7d3d; color: #ccda9e; background: #a2b9750c; }
+.research-benefit small { display: block; margin-top: 7px; color: #8fa78b; font-size: 10px; }
+.puzzle-rune { padding: 13px 0; color: #d1c493; text-align: center; font-size: 35px; }
+.adv-dialog .puzzle-question { font-size: 17px; color: #f1e7c2; }
+.puzzle-choices { display: grid; grid-template-columns: repeat(4,1fr); gap: 9px; margin: 22px 0; }
+.puzzle-choices button { min-width: 0; min-height: 52px; padding: 10px; background: #44603d33; border-color: #b4bc815b; font: 22px var(--font-title); }
+.puzzle-choices .wrong { border-color: #b7816e; }.puzzle-choices .correct { border-color: #c2d28c; background: #91b66555; }
+.adv-dialog .puzzle-feedback, .adv-dialog .puzzle-hint-copy { font-size: 11px; color: #a3b494; }
+.adv-toast { position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 40; background: #e3d6a9; color: #263e2e; padding: 13px 21px; border-radius: 4px; max-width: calc(100vw - 30px); font-size: 12px; box-shadow: 0 7px 25px #0005; pointer-events: none; }
+button:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid #e3cb8d; outline-offset: 3px; }
+
+@media (max-width: 1050px) {
+  .adventure-home .home-wrap { width: calc(100vw - 20px); height: calc(100dvh - 20px); }
+  .adventure-home .home-side { width: 185px; padding: 20px 12px 12px; }
+  .village-page, .atlas-page, .chapter-page, .quest-prep, .workshop-page, .journal-page { padding: 24px; }
+  .person-card { gap: 5px; padding: 8px 5px; }.person-card .portrait { width: 38px; height: 38px; }
+  .person-card small { font-size: 7px; }.person-card b { font-size: 10px; }
+  .research-sites, .prep-bottom { grid-template-columns: 1fr; }
+  .quest-rewards { border-left: 0; border-top: 1px solid var(--adv-line); padding: 18px 0 0; }
+  .expedition-bar > span { display: none; }.expedition-bar { justify-content: space-between; bottom: -24px; }
+}
+@media (max-width: 760px) {
+  .title-box { max-width: 100%; padding: 28px 20px; }
+  .title-kicker { font-size: 8px; letter-spacing: .22em; }
+  .title-box h1 { font-size: clamp(35px, 9vw, 56px); letter-spacing: .07em; }
+  .title-sub { font-size: 14px; margin-bottom: 28px; }
+  .adventure-home .home-wrap { flex-direction: column; width: 100%; height: 100dvh; max-height: none; border: 0; }
+  .adventure-home .home-side { display: flex; flex-direction: column; width: 100%; gap: 0; padding: max(9px, env(safe-area-inset-top)) 0 0; flex-shrink: 0; border-right: 0; border-bottom: 1px solid var(--adv-line); }
+  .adventure-brand { padding: 0 14px 8px; border: 0; gap: 8px; min-height: 48px; }.brand-crest { font-size: 31px; }
+  .adventure-home .home-title { font-size: 17px; margin: 3px 0 0; }.adventure-brand small { font-size: 7px; }
+  .adventure-brand div > span { display: none; }
+  .adventure-nav { display: flex; flex-direction: row; overflow-x: auto; gap: 0; padding: 0 6px; scrollbar-width: none; }
+  .adventure-nav button { flex: 0 0 auto; min-width: 71px; min-height: 49px; padding: 7px 9px; text-align: center; border: 0; border-radius: 0; font-size: 10px; }
+  .adventure-nav button i { display: block; width: auto; font-size: 17px; margin-bottom: 2px; line-height: 1.2; }
+  .adventure-nav button:nth-child(6) { margin-top: 0; }
+  .adventure-nav button.on { border-bottom: 2px solid #ddc990; background: #a1b08514; }
+  .adventure-side-status { position: absolute; top: 18px; right: 17px; border: 0; padding: 0; margin: 0; text-align: right; }
+  .adventure-side-status > small, .adventure-side-status > div, .adventure-side-status p, .adventure-home .home-stats, .adventure-side-foot { display: none; }
+  .adventure-side-status strong { font-size: 20px; margin: 0; }.adventure-side-status strong span { font-size: 9px; }
+  .adventure-home .home-main { flex: 1; min-height: 0; }
+  .village-page, .atlas-page, .chapter-page, .quest-prep, .workshop-page, .journal-page { padding: 20px 16px 24px; }
+  .adv-heading { margin-bottom: 18px; }.adv-heading h2 { font-size: 27px; margin-top: 6px; }.adv-heading p { font-size: 11px; }
+  .eyebrow { font-size: 8px; }
+  .village-view { display: flex; flex-wrap: wrap; padding-bottom: 7px; justify-content: center; }
+  .village-art { flex-basis: 100%; width: 100%; height: auto; margin-bottom: 6px; }
+  .village-location { font-size: 8px; top: 9px; left: 9px; padding: 5px 8px; }
+  .village-spot { position: static; transform: none; padding: 7px 6px; margin: 2px; min-height: 32px; font-size: 8px; box-shadow: none; }
+  .village-spot i { width: 4px; height: 4px; margin-right: 4px; }
+  .village-bottom { grid-template-columns: 1fr; gap: 20px; margin: 22px 0; }.next-request { border-right: 0; padding-right: 0; }
+  .next-request .primary { width: 100%; }.village-progress { border-top: 1px solid var(--adv-line); padding-top: 17px; }
+  .village-progress h3 { margin-top: 6px; }.village-progress p { margin-bottom: 4px; }
+  .people-row { grid-template-columns: 1fr; gap: 8px; padding-top: 17px; }.person-card { padding: 9px 12px; gap: 12px; }
+  .person-card .portrait { width: 44px; height: 44px; }.person-card b { font-size: 13px; }.person-card small { font-size: 9px; }.person-card em { display: none; }
+  .chapter-grid { gap: 12px; }.chapter-number { top: 7px; left: 11px; font-size: 25px; }
+  .chapter-copy { padding: 13px 11px; }.chapter-copy h3 { font-size: 17px; margin: 6px 0; }.chapter-copy small { font-size: 7px; letter-spacing: 0; }
+  .chapter-copy p { font-size: 9px; line-height: 1.6; }.chapter-arrow { font-size: 15px; right: 12px; bottom: 10px; }
+  .journey-progress { gap: 10px; font-size: 10px; }.region-banner .land-art { height: 215px; }.region-banner.compact .land-art { height: 180px; }
+  .region-banner > div { left: 18px; bottom: 18px; right: 15px; }.region-banner h2 { font-size: 24px; }.region-banner p { font-size: 11px; }
+  .quest-entry { padding: 17px 13px; gap: 13px; }.quest-entry-copy b { font-size: 19px; }.quest-entry-copy small { font-size: 7px; }.quest-entry-copy em { font-size: 10px; }
+  .quest-brief, .smith-note { padding: 13px; gap: 11px; }.quest-brief .portrait, .smith-note .portrait { width: 42px; height: 42px; }
+  .quest-brief p, .smith-note p { font-size: 11px; }.section-title h3 { font-size: 16px; }.section-title > span { font-size: 9px; }
+  .research-sites { gap: 9px; }.research-card { padding: 15px; }.research-card p { font-size: 10px; }
+  .prep-bottom { gap: 6px; }.expedition-bar { bottom: -24px; gap: 12px; }.expedition-bar .primary { width: 100%; min-height: 49px; }
+  .equipment-grid, .journal-grid { grid-template-columns: 1fr; gap: 13px; }.equipment-card { padding: 21px; }.equipment-symbol { float: right; font-size: 46px; margin: 2px 0 0 10px; }
+  .equipment-card h3 { font-size: 22px; }.equipment-effect { min-height: 0; }.equipment-card > button { min-height: 46px; }
+  .inventory { gap: 13px; }.inventory .material { font-size: 10px; }.journal-entry { padding: 18px 14px; }.journal-details h3 { font-size: 18px; }
+  .adv-dialog-backdrop { padding: 15px; }.adv-dialog { padding: 24px; max-height: calc(100dvh - 30px); }.adv-dialog h2 { font-size: 22px; }
+  .adv-dialog p { font-size: 13px; }.dialogue-copy { min-height: 130px; }.dialogue-person { gap: 10px; }.dialogue-person .portrait { width: 47px; height: 47px; }
+  .dialogue-buttons .primary { min-width: 160px; }.puzzle-choices { gap: 7px; }.puzzle-choices button { min-height: 50px; }.adv-dialog .puzzle-question { font-size: 16px; }
+  .adv-toast { width: calc(100vw - 40px); bottom: 20px; font-size: 11px; text-align: center; }
+  .adventure-home .home-main > .panel, .adventure-home .home-main > .quest-card { padding: 20px 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .chapter-card:hover { transform: none; } }

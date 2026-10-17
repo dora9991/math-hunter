@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "竜狩りの谷 — モンハン2ndG風の3Dハンティングアクション（ブラウザ／Three.js）",
+  "description": "数学ハンター — 数式で狩り、6地域の物語を進めて村を復興するブラウザRPG",
   "scripts": {
     "dev": "node tests/devserver.cjs",
     "build": "node build.mjs",
-    "test": "node tests/run.cjs"
+    "test": "node tests/run.cjs && node tests/adventure.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

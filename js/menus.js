@@ -5,6 +5,8 @@ import { CREDITS_HTML } from './credits.js';
 import { OPTIONS, PRESETS, resolveOptions } from './mathbattle.js';
 import { BESTIARY, NEW_BEAST_IDS, enemyShort } from './bestiary.js';
 import { BATTLE_BACKGROUNDS } from './battlefield.js';
+import { AdventureUI } from './adventureUI.js';
+import { QUESTS } from './adventure.js';
 
 const MATH_HELP = `
   <h2>遊び方</h2>
@@ -27,8 +29,10 @@ export class Menus {
     this.root = root;
     this.game = game;
     this.cur = null;
+    this.adventureUI = new AdventureUI(this);
   }
   _screen(cls, html) {
+    this.adventureUI?.closeDialog?.();
     this.root.innerHTML = `<div class="screen ${cls}">${html}</div>`;
     this.root.classList.remove('hidden');
     this.cur = cls;
@@ -36,37 +40,43 @@ export class Menus {
     el.querySelectorAll('button').forEach(b => b.addEventListener('mouseenter', () => this.game.sfx('select')));
     return el;
   }
-  hide() { this.root.classList.add('hidden'); this.root.innerHTML = ''; this.cur = null; }
+  hide() { this.adventureUI?.closeDialog?.(); this.root.classList.add('hidden'); this.root.innerHTML = ''; this.cur = null; }
 
   title() {
     const el = this._screen('title', `
       <div class="title-box">
-        <div class="title-kicker">MATH HUNTING ACTION</div>
+        <div class="title-kicker">MATH HUNTER · ADVENTURE RPG</div>
         <h1>${GAME_TITLE}</h1>
-        <div class="title-sub">― 数式で狩れ ―</div>
+        <div class="title-sub">― 六つの理石と、新しい朝 ―</div>
         <button class="big start">タップ／クリックしてはじめる</button>
         ${this.game.settings.bgm ? '<button class="ghost music-preview">♪ タイトル曲を聴く</button>' : ''}
-        <div class="title-note">問題を解くと、狩人が動く。タップ（クリック）だけで遊べます・音が出ます</div>
+        <div class="title-note">狩りの先に、帰る場所が育っていく。<br>タップで遊ぶ、数式と冒険のRPG。</div>
       </div>
       <div class="title-foot">非公式のファンメイド作品です ・ 質感の画像：Poly Haven（CC0）／キャンプ用品：Kenney（CC0）・ クレジットは拠点メニューから</div>`);
     el.querySelector('.start').addEventListener('click', () => { this.game.sfx('ui'); this.game.goHome(); });
     el.querySelector('.music-preview')?.addEventListener('click', () => this.game.audio.start());
   }
 
-  home(tab = 'math') {
+  home(tab = 'village') {
     const log = store.get('hunter.mathlog', []);
     const wins = log.filter(x => x.win).length;
-    const el = this._screen('home', `
+    const el = this._screen('home adventure-home', `
       <div class="home-wrap">
         <div class="home-side">
-          <div class="home-title">拠点 ― 狩人の村</div>
-          <button data-tab="math">数式バトル</button>
+          <div class="adventure-brand"><span class="brand-crest">◇</span><div><small>THE SIX LIGHTS</small><div class="home-title">数学ハンター</div><span>リュミエ村の冒険記</span></div></div>
+          <nav class="adventure-nav" aria-label="冒険のメニュー">
+          <button data-tab="village"><i>⌂</i>村に戻る</button>
+          <button data-tab="map"><i>⌖</i>世界地図</button>
+          <button data-tab="workshop"><i>⚒</i>鍛冶屋</button>
+          <button data-tab="journal"><i>▤</i>狩猟図鑑</button>
+          <button data-tab="math"><i>⚔</i>自由狩猟</button>
           <button data-tab="record">記録</button>
           <button data-tab="help">遊び方</button>
           <button data-tab="settings">設定</button>
-          <button data-tab="credits">クレジット</button>
-          <button data-tab="title" class="ghost">タイトルへ</button>
+          </nav>
+          <div class="adventure-side-status"></div>
           <div class="home-stats">討伐 ${wins} 回 ／ 挑戦 ${log.length} 回</div>
+          <div class="adventure-side-foot"><button data-tab="credits" class="ghost">クレジット</button><button data-tab="title" class="ghost">タイトルへ</button></div>
         </div>
         <div class="home-main"></div>
       </div>`);
@@ -76,6 +86,14 @@ export class Menus {
       this._tab(el, b.dataset.tab);
     }));
     this._tab(el, tab);
+    this.updateAdventureStatus();
+  }
+
+  updateAdventureStatus() {
+    const el = this.root.querySelector('.adventure-side-status');
+    if (!el) return;
+    const a = this.game.adventure;
+    el.innerHTML = `<small>ADVENTURE PROGRESS</small><strong>${a.state.completed.length}<span> / ${QUESTS.length} 依頼達成</span></strong><div><i style="width:${a.state.completed.length / QUESTS.length * 100}%"></i></div><p>◇ ${a.state.materials.marks} <span>ギルド貨</span></p>`;
   }
 
   _tab(el, tab) {
@@ -84,12 +102,14 @@ export class Menus {
     const g = this.game;
     g.homeTab = tab;
     if (g.settings.bgm && g.mode === 'home') g.audio.bgm(tab === 'math' ? 'prebattle' : 'menu');
-    if (tab === 'math') {
+    if (['village', 'map', 'workshop', 'journal'].includes(tab)) {
+      this.adventureUI.render(main, tab);
+    } else if (tab === 'math') {
       let cur = resolveOptions(g.settings.math || {});
       main.innerHTML = `
         <div class="quest-card">
           <div class="quest-rank">中1 数学 ・ 正負の数／文字式／一次方程式</div>
-          <h2>数式バトル</h2>
+          <h2>自由狩猟</h2>
           <p class="quest-desc">行動のひとつひとつに問題と4つの答えがついている。<b>正しい答えをタップした瞬間に、その行動が出る。</b><br>時間は止まらない。敵は予告のあと必ず攻撃してくるので、間に合わなければダメージを受ける。<br><b>スペースキー</b>（または「集中」ボタン）で「集中」＝世界がスローになる（ゲージのぶんだけ。正解すると少し戻る）。</p>
           <label class="math-opt"><span>対戦する敵</span><select class="enemy-choice"><option value="zarva">焔角竜ザルヴァ</option><option value="sektra">熔晶竜セクトラ</option><option value="veira">蒼翼竜ヴェイラ</option>${NEW_BEAST_IDS.map(id => `<option value="${id}">${BESTIARY[id].name}｜${BESTIARY[id].field}</option>`).join('')}</select></label>
           <label class="math-opt"><span>戦う背景</span><select class="background-choice"><option value="auto">おすすめ（敵に合わせる）</option>${Object.entries(BATTLE_BACKGROUNDS).map(([id,b]) => `<option value="${id}">${b.name}</option>`).join('')}</select></label>
@@ -271,6 +291,7 @@ export class Menus {
         <div class="result-head">${r.win ? 'BATTLE CLEAR' : 'BATTLE FAILED'}</div>
         <h2>${r.win ? '討伐成功！' : '討伐失敗…'}</h2>
         <div class="result-reason">${r.reason}${r.win ? '' : `（敵の体力 残り${r.monsterLeft}%）`}</div>
+        ${r.adventure ? this.adventureUI.resultHTML(r) : ''}
         <table class="quest-table math-table">
           <tr><th>かかった時間</th><td>${fmtTime(r.time)}（難易度：${r.level}）</td></tr>
           <tr><th>正解</th><td>${r.correct}問（ミス ${r.miss}回・正答率 ${r.rate}%）</td></tr>
@@ -279,12 +300,12 @@ export class Menus {
           <tr><th>受けた攻撃</th><td>${r.hitsTaken}回（回避 ${r.dodges}回・移動でかわした ${r.sidesteps}回・止めた ${r.stopped}回）</td></tr>
           <tr><th>スローを使った時間</th><td>${r.slowUsed.toFixed(1)}秒</td></tr>
         </table>
-        <div class="result-btns"><button class="big again">もう一度</button> <button class="back">拠点へ戻る</button></div>
+        <div class="result-btns"><button class="big again">もう一度</button> <button class="back">${r.adventure ? r.win ? '村で報告する' : '村で準備し直す' : '村へ戻る'}</button></div>
         ${missed ? `<h3>まちがえた問題</h3><table class="quest-table math-table topics">${missed}</table>` : ''}
         ${topics ? `<h3>解いた問題</h3><table class="quest-table math-table topics">${topics}</table>` : ''}
         <h3>設定</h3><table class="quest-table math-table topics">${r.setup.map(x => `<tr><th>${x[0]}</th><td>${x[1]}</td></tr>`).join('')}</table>
       </div>`);
-    el.querySelector('.again').addEventListener('click', () => { this.game.sfx('ui'); this.game.startMathBattle(r.opts); });
+    el.querySelector('.again').addEventListener('click', () => { this.game.sfx('ui'); if (r.adventure) this.game.startAdventureQuest(r.adventure.questId); else this.game.startMathBattle(r.opts); });
     el.querySelector('.back').addEventListener('click', () => { this.game.sfx('ui'); this.game.goHome(); });
   }
 

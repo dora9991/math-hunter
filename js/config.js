@@ -1,6 +1,6 @@
 // 調整用の数値をまとめた所（遊びやすさの調整はここを触る）
 
-export const GAME_TITLE = '竜狩りの谷';
+export const GAME_TITLE = '数学ハンター';
 export const GAME_SUBTITLE = '― 数式で狩れ ―';
 
 export const HUNTER = {

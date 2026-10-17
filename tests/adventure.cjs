@@ -1,0 +1,53 @@
+// 保存を伴う依頼進行・報酬・製作の検証。
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const { pathToFileURL } = require('node:url');
+(async () => {
+  const { Adventure, QUESTS, CHAPTERS, EQUIPMENT, normalizeAdventure } = await import(pathToFileURL(path.resolve(__dirname, '../js/adventure.js')));
+  let saved, passed = 0;
+  const ok = (name, condition) => { assert.ok(condition, name); passed++; };
+  const a = new Adventure(null, s => { saved = JSON.parse(JSON.stringify(s)); return true; });
+  ok('初回は草原の一つ目だけに出発できる', a.available('road') && !a.available('gate') && !a.available('sixlights'));
+  ok('未開放の依頼の調査や出発はできない', !a.prepareRun('gate') && !a.investigate('gate', 'trace'));
+  ok('鍛冶屋の復興前は製作できない', !a.craft('breaker'));
+  ok('誤答は調査を達成にしない', !a.investigate('road', 'rune', -2));
+  a.investigate('road', 'trace'); a.investigate('road', 'trace');
+  a.investigate('road', 'rune', 2); a.investigate('road', 'rune', 2);
+  const first = a.prepareRun('road');
+  ok('調査を繰り返しても支援が重ならない', first.effects.parts === 1.15 && first.effects.focus === 3);
+  const fail = a.finishRun(first, { win: false, time: 30, attacks: ['雷牙飛びかかり'], breaks: [] });
+  ok('敗北しても進行と所持素材は失われず、依頼は進まない', !fail.first && !a.available('gate') && a.state.materials.marks === 0);
+  ok('敗北時も観察した攻撃を保存する', saved.journal.raizen.attacks.includes('雷牙飛びかかり'));
+  const run = a.prepareRun('road');
+  const r = a.finishRun(run, { win: true, time: 70, attacks: ['雷牙飛びかかり'], breaks: ['右肩棘'] });
+  ok('初回報酬と部位破壊の追加素材を得る', r.first && a.state.materials.marks === 50 && a.state.materials.crystal === 3);
+  ok('次の依頼が開き、報告が保存される', a.available('gate') && saved.pendingStory === 'road');
+  const before = JSON.stringify(a.state.materials);
+  ok('同じ戦闘の報酬を二重に受け取らない', a.finishRun(run, { win: true }) === null && before === JSON.stringify(a.state.materials));
+  const gate = a.finishRun(a.prepareRun('gate'), { win: true, time: 90 });
+  ok('章の最後で鍛冶屋が完成し、森林が開く', gate.facility === 'forge' && a.facility('forge') && a.available('roots'));
+  const ore = a.state.materials.ore;
+  ok('製作は素材を消費して装具を装備する', a.craft('breaker') && a.state.equipped === 'breaker' && a.state.materials.ore === ore - 6);
+  const afterCraft = JSON.stringify(a.state.materials);
+  ok('製作済みの装具は二重に消費しない', !a.craft('breaker') && afterCraft === JSON.stringify(a.state.materials));
+  ok('未製作の装具を装備できない', !a.equip('focus'));
+  const replay = a.finishRun(a.prepareRun('road'), { win: true, time: 60, breaks: [] });
+  ok('再挑戦は40%報酬で、物語を再解放しない', replay.reward.marks === 20 && !replay.first && !replay.facility && a.state.completed.length === 2);
+  ok('再挑戦でも討伐数と最速記録を更新する', a.state.journal.raizen.kills === 2 && a.state.journal.raizen.best === 60);
+  for (const q of QUESTS.slice(2)) {
+    ok(`${q.id}は順番通り開放される`, a.available(q.id));
+    a.finishRun(a.prepareRun(q.id), { win: true, time: 100, attacks: ['観察済み'], breaks: [] });
+  }
+  ok('13体で6章すべてをクリアできる', a.chaptersDone === CHAPTERS.length && a.state.completed.length === 13 && a.nextQuest === null);
+  ok('最終依頼で広場が完成する', a.facility('plaza') && saved.pendingStory === 'sixlights');
+  const support = a.prepareRun('road').effects;
+  ok('村と装具の支援が戦闘へ渡る', support.potions === 1 && support.hp === 15 && support.focus === 4 && Math.abs(support.parts - 1.6) < 1e-9);
+  const restored = new Adventure(saved, () => true);
+  ok('保存から章・装具・素材・図鑑が復元される', restored.chaptersDone === 6 && restored.state.equipped === 'breaker' && restored.state.materials.ore === a.state.materials.ore && restored.state.journal.raizen.best === 60);
+  restored.acknowledgeStory(); ok('読んだ報告を再表示しない', restored.state.pendingStory === null);
+  const malformed = normalizeAdventure({ completed: 4, materials: { marks: -10 }, crafted: ['missing'], equipped: 'missing' });
+  ok('壊れた保存データでも安全な初期値へ戻す', malformed.completed.length === 0 && malformed.materials.marks === 0 && malformed.equipped === 'traveler');
+  ok('依頼順序を飛び越えた保存は引き継がない', normalizeAdventure({ completed: ['sixlights'] }).completed.length === 0);
+  ok('各装具の費用は獲得できる素材で定義される', EQUIPMENT.every(e => Object.keys(e.cost).every(k => k in a.state.materials)));
+  console.log(`冒険の進行テスト：${passed} 成功 / 0 失敗`);
+})().catch(e => { console.error(e); process.exitCode = 1; });

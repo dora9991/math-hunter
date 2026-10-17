@@ -61,12 +61,13 @@ async function bundle(standalone) {
   });
   return result.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
 }
-const css = fs.readFileSync(r('css/style.css'), 'utf8');
+const css = ['css/style.css', 'css/adventure.css'].map(f => fs.readFileSync(r(f), 'utf8')).join('\n');
 const d = new Date(), pad = n => String(n).padStart(2, '0');
 const stamp = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 function makeHtml(js) {
   let html = fs.readFileSync(r('index.html'), 'utf8');
-  html = html.replace(/<link rel="stylesheet"[^>]*>/, () => `<style>\n${css}\n</style>`);
+  html = html.replace(/<link rel="stylesheet"[^>]*>/g, '');
+  html = html.replace('</head>', () => `<style>\n${css}\n</style>\n</head>`);
   html = html.replace(/<!-- IMPORTMAP -->[\s\S]*?<!-- \/IMPORTMAP -->\n?/, () => '');
   html = html.replace(/<!-- APP -->[\s\S]*?<!-- \/APP -->/, () => `<script>\n${js}\n</script>`);
   return html.replace('<head>', () => `<head>\n<!-- 竜狩りの谷 配布版（${stamp} ビルド）。three.js (MIT) を同梱 -->`);
