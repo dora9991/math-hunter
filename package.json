@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "数学ハンター — 数式で狩り、6地域の物語を進めて村を復興するブラウザRPG",
+  "description": "数学ハンター — 数式で狩り、12章の物語と仲間の外伝を巡るブラウザRPG",
   "scripts": {
     "dev": "node tests/devserver.cjs",
     "build": "node build.mjs",
-    "test": "node tests/run.cjs && node tests/adventure.cjs"
+    "test": "node tests/run.cjs && node tests/adventure.cjs && node tests/expansion.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

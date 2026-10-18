@@ -2,6 +2,7 @@
 let serial = 0;
 const themes = {
   grassland: ['#96bec0', '#e5d8ac', '#6c8e67', '#395e4d'],
+  marsh: ['#4d8b99', '#c2dfd1', '#699c92', '#326c77'],
   forest: ['#547d79', '#b0caa6', '#426b4e', '#234838'],
   desert: ['#b79282', '#f0d7a4', '#c89b65', '#936f50'],
   snowland: ['#658aaf', '#dce9e7', '#b6cfdb', '#748ea4'],
@@ -13,6 +14,7 @@ export function regionArt(id, label = '') {
   const c = themes[id] || themes.grassland, uid = `land-${serial++}`;
   const trees = Array.from({ length: 11 }, (_, i) => {
     const x = 28 + i * 61, y = 170 + (i % 3) * 19, h = 46 + (i % 4) * 14;
+    if (id === 'marsh') return `<path d="M${x-20} ${y}q20-10 40 0t40 0" stroke="#aedbd1" stroke-width="3" fill="none"/>`;
     if (id === 'forest') return `<path d="M${x} ${y}v-${h}" stroke="#354c39" stroke-width="9"/><path d="M${x-27} ${y-h+18}l27 -45 29 45z" fill="${i % 2 ? '#537958' : '#3b624a'}"/>`;
     if (id === 'grassland') return `<path d="M${x} ${y}l3 -12 4 12" fill="#d4c681"/>`;
     if (id === 'desert') return `<path d="M${x-2} ${y}v-27m-8 12h8m0-6h9" stroke="#686f53" stroke-width="5" fill="none"/>`;
@@ -42,7 +44,7 @@ export function villageArt(adventure) {
 }
 
 export function portrait(id) {
-  const colors = { mira: ['#78b9aa', '#394b49', '#d9bea0'], gan: ['#bb8c63', '#51493d', '#c8a381'], toma: ['#a4a0c5', '#55545a', '#d4c3a6'] };
+  const colors = { mira: ['#78b9aa', '#394b49', '#d9bea0'], gan: ['#bb8c63', '#51493d', '#c8a381'], nagi: ['#80bfd0', '#4c5970', '#e0c5a4'], toma: ['#a4a0c5', '#55545a', '#d4c3a6'] };
   const c = colors[id] || colors.mira;
   return `<svg viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="39" fill="${c[0]}" opacity=".18"/><path d="M9 80q1-29 31-29t31 29" fill="${c[0]}"/><path d="M21 31q0-24 20-23t20 25l-7 20H27z" fill="${c[1]}"/><path d="M28 26q14 8 26-3v18q-1 19-13 19T28 41z" fill="${c[2]}"/><path d="M25 28l10-14 24 14-6-17-17-4-13 12z" fill="${c[1]}"/>${id === 'gan' ? '<path d="M27 43l14 10 15-10-5 18-11 4-11-7z" fill="#6d6252"/>' : ''}<path d="M33 38h2m12 0h2" stroke="#3b463f" stroke-width="3" stroke-linecap="round"/><path d="M37 48q4 3 8 0" fill="none" stroke="#9e7965" stroke-width="2"/></svg>`;
 }

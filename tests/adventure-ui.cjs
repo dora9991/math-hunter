@@ -16,6 +16,12 @@ const width = Number(process.argv[3] || 1280), height = width < 600 ? 844 : 860;
     p = await b.page(url);
     if (engine === 'chrome') await p.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: width < 600 });
     await p.wait('!!window.__hunt?.game', 40000);
+    if (process.argv.includes('expand')) {
+      await require('./expansion-browser.cjs')({p,url,dir,width,engine,check});
+      check('実行中のページエラーがない', p.errors().length === 0);
+      console.log(JSON.stringify({scenario:'expansion',engine,width,pass:passed,errors:p.errors()}));
+      return;
+    }
     await p.eval(`localStorage.removeItem('hunter.adventure.v1');1`);
     await p.goto(url); await p.wait('!!window.__hunt?.game', 40000);
     check('指定した画面幅で表示される', await p.eval(`innerWidth === ${width}`));
@@ -75,7 +81,7 @@ const width = Number(process.argv[3] || 1280), height = width < 600 ? 844 : 860;
     check('画面の横にはみ出さない', await p.eval(`document.querySelector('.home-main').scrollWidth <= document.querySelector('.home-main').clientWidth + 1`));
     // 残る地域では戦闘の結果処理を通し、最終章までのUIと支援を確認する。
     await p.eval(`(()=>{const g=window.__hunt.game;for(const id of ['roots','spring','dunes','scales','snowpath','embers','skyway','stars','crater','guardian','sixlights']){g.startAdventureQuest(id);g.math.clearTime=80;g.math.finish(true,'依頼達成');}g.goHome();1})()`);
-    check('最終章の報告と完成した村に到達する', await p.eval(`window.__hunt.game.adventure.facility('plaza') && window.__hunt.game.adventure.state.completed.length === 13 && !!document.querySelector('.adv-dialog')`));
+    check('第一部の報告と完成した村に到達する', await p.eval(`window.__hunt.game.adventure.facility('plaza') && window.__hunt.game.adventure.state.completed.length === 13 && !!document.querySelector('.adv-dialog')`));
     await p.clickText('.story-skip', '閉じる');
     await p.wait(`!document.querySelector('.adv-dialog')`, 10000);
     await p.shot(path.join(dir, `adventure-${engine}-${width}-restored.png`));

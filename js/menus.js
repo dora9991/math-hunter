@@ -69,6 +69,7 @@ export class Menus {
           <button data-tab="map"><i>⌖</i>世界地図</button>
           <button data-tab="workshop"><i>⚒</i>鍛冶屋</button>
           <button data-tab="journal"><i>▤</i>狩猟図鑑</button>
+          <button data-tab="guild"><i>✧</i>ギルド</button>
           <button data-tab="math"><i>⚔</i>自由狩猟</button>
           <button data-tab="record">記録</button>
           <button data-tab="help">遊び方</button>
@@ -93,7 +94,7 @@ export class Menus {
     const el = this.root.querySelector('.adventure-side-status');
     if (!el) return;
     const a = this.game.adventure;
-    el.innerHTML = `<small>ADVENTURE PROGRESS</small><strong>${a.state.completed.length}<span> / ${QUESTS.length} 依頼達成</span></strong><div><i style="width:${a.state.completed.length / QUESTS.length * 100}%"></i></div><p>◇ ${a.state.materials.marks} <span>ギルド貨</span></p>`;
+    el.innerHTML = `<small>ADVENTURE PROGRESS</small><strong>${a.state.completed.length}<span> / ${QUESTS.length} 依頼達成</span></strong><div><i style="width:${a.state.completed.length / QUESTS.length * 100}%"></i></div><p class="sidebar-rank">HR ${a.rank}${a.state.title ? ` · ${a.milestones().find(m=>m.id===a.state.title)?.name || ''}` : ''}</p><p>◇ ${a.state.materials.marks} <span>ギルド貨</span></p>`;
   }
 
   _tab(el, tab) {
@@ -102,7 +103,7 @@ export class Menus {
     const g = this.game;
     g.homeTab = tab;
     if (g.settings.bgm && g.mode === 'home') g.audio.bgm(tab === 'math' ? 'prebattle' : 'menu');
-    if (['village', 'map', 'workshop', 'journal'].includes(tab)) {
+    if (['village', 'map', 'workshop', 'journal', 'guild'].includes(tab)) {
       this.adventureUI.render(main, tab);
     } else if (tab === 'math') {
       let cur = resolveOptions(g.settings.math || {});
@@ -130,7 +131,7 @@ export class Menus {
             <tr><th>回避</th><td>敵の攻撃が強いほど難しい問題。解ければその場で避けて、次の一撃が1.5倍</td></tr>
             <tr><th>回復</th><td>式の値（3回まで）</td></tr>
           </table>
-          <div class="quest-hint">立ち位置は左・中央・右の3か所。<b>中央</b>は頭（弱点）、<b>左右</b>は敵ごとに違う部位を狙える。敵によって間合いとフィールドも変わる。<br>赤い円が出た場所に攻撃が来る。新しい10体はそれぞれ固有技を3つ使い、強力な大技も持つ。左右の部位を壊すと大技を封じられる。連続正解で攻撃が強くなり、ミスすると1秒動けない。<br>問題の難しさ「やさしい」は小さい数と1手の方程式、「むずかしい」は3つの数の計算・2乗・かっこつきの方程式。</div>
+          <div class="quest-hint">立ち位置は左・中央・右の3か所。<b>中央</b>は頭（弱点）、<b>左右</b>は敵ごとに違う部位を狙える。敵によって間合いとフィールドも変わる。<br>赤い円が出た場所に攻撃が来る。各モンスターは固有技を使い、強力な大技も持つ。左右の部位を壊すと大技を封じられる。連続正解で攻撃が強くなり、ミスすると1秒動けない。<br>問題の難しさ「やさしい」は小さい数と1手の方程式、「むずかしい」は3つの数の計算・2乗・かっこつきの方程式。</div>
         </div>`;
       const show = () => {
         main.querySelector(`input[name=level][value="${cur.level}"]`).checked = true;
@@ -300,13 +301,13 @@ export class Menus {
           <tr><th>受けた攻撃</th><td>${r.hitsTaken}回（回避 ${r.dodges}回・移動でかわした ${r.sidesteps}回・止めた ${r.stopped}回）</td></tr>
           <tr><th>スローを使った時間</th><td>${r.slowUsed.toFixed(1)}秒</td></tr>
         </table>
-        <div class="result-btns"><button class="big again">もう一度</button> <button class="back">${r.adventure ? r.win ? '村で報告する' : '村で準備し直す' : '村へ戻る'}</button></div>
+        <div class="result-btns"><button class="big again">もう一度</button> <button class="back">${r.adventure?.challenge ? 'ギルドへ戻る' : r.adventure ? r.win ? '村で報告する' : '村で準備し直す' : '村へ戻る'}</button></div>
         ${missed ? `<h3>まちがえた問題</h3><table class="quest-table math-table topics">${missed}</table>` : ''}
         ${topics ? `<h3>解いた問題</h3><table class="quest-table math-table topics">${topics}</table>` : ''}
         <h3>設定</h3><table class="quest-table math-table topics">${r.setup.map(x => `<tr><th>${x[0]}</th><td>${x[1]}</td></tr>`).join('')}</table>
       </div>`);
-    el.querySelector('.again').addEventListener('click', () => { this.game.sfx('ui'); if (r.adventure) this.game.startAdventureQuest(r.adventure.questId); else this.game.startMathBattle(r.opts); });
-    el.querySelector('.back').addEventListener('click', () => { this.game.sfx('ui'); this.game.goHome(); });
+    el.querySelector('.again').addEventListener('click', () => { this.game.sfx('ui'); if (r.adventure?.challenge) this.game.startAnomaly(r.adventure.enemy,r.adventure.tier,r.adventure.condition); else if (r.adventure) this.game.startAdventureQuest(r.adventure.questId); else this.game.startMathBattle(r.opts); });
+    el.querySelector('.back').addEventListener('click', () => { this.game.sfx('ui'); this.game.goHome(r.adventure?.challenge ? 'guild' : 'village'); });
   }
 
   loading(text) {

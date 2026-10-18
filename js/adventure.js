@@ -1,12 +1,15 @@
 // 冒険の進行と保存。戦闘や画面から独立させ、依頼の順序と報酬をここで管理する。
 import { store } from './util.js';
+import { ADDED_CHAPTERS, ADDED_QUESTS, SIDE_STORIES, NEW_EQUIPMENT, ANOMALIES } from './expansionContent.js';
+export { SIDE_STORIES, ANOMALIES } from './expansionContent.js';
 
 export const ADVENTURE_KEY = 'hunter.adventure.v1';
-export const MATERIALS = { marks: 'ギルド貨', ore: '鉄鉱石', wood: '古木材', crystal: '理石のかけら' };
+export const MATERIALS = { marks: 'ギルド貨', ore: '鉄鉱石', wood: '古木材', crystal: '理石のかけら', sigil: 'ギルド勲章', core: '古代核' };
 export const PEOPLE = {
   mira: { name: '調査士 ミラ', role: '理石を追う研究者', color: '#86cdbb', initial: 'M', line: 'モンスターの足跡にも、きっと理由がある。まずは現地を見てみよう。' },
   gan: { name: '鍛冶師 ガン', role: '村に戻ってきた職人', color: '#eda265', initial: 'G', line: '強さは剣の重さだけじゃない。自分の戦い方に合う道具を選びな。' },
   toma: { name: '地図師 トーマ', role: '行方不明の隊を知る人', color: '#b7b2e5', initial: 'T', line: '地図の空白は、まだ誰も帰ってきていない場所だ。お前たちなら埋められるかもしれん。' },
+  nagi: { name: '灯台守 ナギ', role: '海の向こうの旅人', color: '#79becf', initial: 'N', line: '灯を届けるのが私の仕事。いつか、自分の旅にも出てみたいな。' },
 };
 
 export const CHAPTERS = [
@@ -16,6 +19,7 @@ export const CHAPTERS = [
   { id: 'snowland', no: '04', name: '白夜の雪国', title: '凍らない約束', color: '#95c6de', subtitle: '終わらない吹雪の奥に、あたたかな結晶が残っていた。', facility: 'clinic' },
   { id: 'summit', no: '05', name: '空渡りの山頂', title: '星を読む者たち', color: '#aaaee0', subtitle: 'かつてのハンター隊が残した観測所を目指す。', facility: 'observatory' },
   { id: 'volcano', no: '06', name: '始まりの火山', title: '六つの理石', color: '#e99570', subtitle: '世界を守ったはずの装置。その最後の選択。', facility: 'plaza' },
+  ...ADDED_CHAPTERS,
 ];
 
 export const FACILITIES = [
@@ -33,6 +37,7 @@ export const EQUIPMENT = [
   { id: 'breaker', name: '雷牙の破砕具', type: 'BREAKER', desc: '部位を崩し、大技を封じる狩人へ。', detail: '部位への蓄積ダメージ +45% ／ 与えるダメージ −5%。', cost: { marks: 65, ore: 6, crystal: 2 }, effects: { parts: 1.45, damage: 0.95 }, color: '#e3bc64' },
   { id: 'counter', name: '風渡りの外套', type: 'COUNTER', desc: '攻撃を見切り、反撃で仕留める。', detail: '回避後の一撃 1.5倍 → 2倍 ／ 最大体力 −10。', cost: { marks: 70, wood: 5, crystal: 3 }, effects: { counter: 2, hp: -10 }, color: '#8ac8c2' },
   { id: 'focus', name: '星読みの護符', type: 'FOCUS', desc: 'じっくり考えるための時間を作る。', detail: '集中 +5秒 ／ 与えるダメージ −8%。', cost: { marks: 60, ore: 3, crystal: 5 }, effects: { focus: 5, damage: 0.92 }, color: '#b0a4de' },
+  ...NEW_EQUIPMENT,
 ];
 
 // 二つの調査地点は任意。観察で部位を狙いやすく、仕掛けを解くと集中が長くなる。
@@ -49,102 +54,168 @@ export const QUESTS = [
   { id: 'stars', chapter: 4, enemy: 'galdo', name: '星を閉ざす鋼翼', place: '山頂の高空の石舞台', boss: true, brief: '鋼翼竜の暴風の奥で、観測装置がまだ動いている。調査隊の最後の記録を取り戻そう。', trace: '鋼羽の落下点', clue: '鋼翼の十字斬りは反対側へも続く。両翼を壊し、鋼鉄の暴風を止めよう。', puzzle: '観測鏡の角度', question: '同じ角度を3つ合わせると12。1つぶんの角度は？', choices: [3, 4, 9, 36], answer: 4, hint: '12 ÷ 3 を計算しよう。', report: ['記録には、火山の装置が世界を「一つの状態」に固定しようとしているとあった。理石の暴走は、その装置から逃れるための反動だった。', '村の観測所が完成した。集中が2秒長くなる。最後の座標は、すべてが始まった火山を指している。'], reward: { marks: 140, ore: 6, wood: 4, crystal: 7 } },
   { id: 'crater', chapter: 5, enemy: 'barza', name: '火口の鼓動', place: '火山の火口の裂け目', brief: '装置へ続く道は溶岩に分断されている。熔岩獣を退け、理石の流れを読み取ろう。', trace: '冷えた溶岩甲', clue: '火山噴出は中央のあと左右へ。溶岩甲を両方壊すと、この大技を封じられる。', puzzle: '溶岩水門の目盛り', question: '弁を4倍して2足すと18。4x + 2 = 18 の x は？', choices: [4, 5, 8, 16], answer: 4, hint: '18から2を引いて16。それを4で割る。', report: ['火口の底に、巨大な輪が見えた。六つの理石を集めた装置は、今も同じ夜を繰り返そうとしている。', 'ミラは首を振った。「世界は変わり続ける。その釣り合いを、取り戻そう」'], reward: { marks: 130, ore: 7, wood: 3, crystal: 7 } },
   { id: 'guardian', chapter: 5, enemy: 'zarva', name: '輪を守る焔角', place: '火山の古代装置', boss: true, brief: '装置の前に立つ焔角竜。最後の封印を越え、調査隊が選べなかった答えへ進む。', trace: '焼けた守護の紋章', clue: '中央は頭を狙えるが、噛みつきと火球が来る。尻尾回転は全域を巻き込むので回避を解こう。', puzzle: '封印の調整式', question: '2x + 6 = 20。封印に合わせる x の値は？', choices: [6, 7, 13, 14], answer: 7, hint: '両側から6を引いて、残った値を2で割ろう。', report: ['焔角が退き、装置の輪が開いた。中にいたのは、調査隊の紋章を宿した月影竜だった。', '最後の理石は、竜自身が守っていた。かつて隊長を助けた守護竜は、装置の中で長い夜を見続けていたのだ。'], reward: { marks: 150, ore: 7, wood: 4, crystal: 8 } },
-  { id: 'sixlights', chapter: 5, enemy: 'lunax', name: '夜明けの六つの灯', place: '火口の天文台', background: 'summit', boss: true, brief: '月影竜を装置から解き放ち、六つの理石をそれぞれの土地へ返す。長い夜に、夜明けを。', trace: '調査隊の最後の印', clue: '影渡りのあとは位置を確認。影翼を両方壊すと、大技・月蝕を止められる。', puzzle: '六灯の均衡盤', question: '左と右を同じにする。x − 3 = 2x − 8 の x は？', choices: [-5, 3, 5, 11], answer: 5, hint: '両側からxを引くと −3 = x − 8。次に8を足そう。', report: ['輪が止まり、六つの光がそれぞれの土地へ帰っていく。月影竜は一度だけ振り返り、明るくなる空へ飛び立った。', '村の広場には、六つの小さな灯がともった。戻ってきた人々の声が、いつもの朝を作っている。「おかえり、数学ハンター」', '物語をクリアしました。すべての依頼を再び受けられます。装具を変え、図鑑を埋めながら、自分だけの狩りを続けてください。'], reward: { marks: 200, ore: 8, wood: 6, crystal: 10 } },
+  { id: 'sixlights', chapter: 5, enemy: 'lunax', name: '夜明けの六つの灯', place: '火口の天文台', background: 'summit', boss: true, brief: '月影竜を装置から解き放ち、六つの理石をそれぞれの土地へ返す。長い夜に、夜明けを。', trace: '調査隊の最後の印', clue: '影渡りのあとは位置を確認。影翼を両方壊すと、大技・月蝕を止められる。', puzzle: '六灯の均衡盤', question: '左と右を同じにする。x − 3 = 2x − 8 の x は？', choices: [-5, 3, 5, 11], answer: 5, hint: '両側からxを引くと −3 = x − 8。次に8を足そう。', report: ['輪が止まり、六つの光がそれぞれの土地へ帰っていく。月影竜は一度だけ振り返り、明るくなる空へ飛び立った。', '村の広場には、六つの小さな灯がともった。戻ってきた人々の声が、いつもの朝を作っている。「おかえり、数学ハンター」', '第一部をクリアしました。海の向こうから、新しい救難の灯が届きます。第7章と異変討究が開放されました。'], reward: { marks: 200, ore: 8, wood: 6, crystal: 10 } },
+  ...ADDED_QUESTS,
 ];
+export const ALL_QUESTS = [...QUESTS, ...SIDE_STORIES];
+export const getQuest = id => ALL_QUESTS.find(q => q.id === id);
+export const MONSTER_QUESTS = ALL_QUESTS.filter((q, i, all) => all.findIndex(x => x.enemy === q.enemy) === i);
 
 const unique = a => [...new Set(Array.isArray(a) ? a : [])];
 const count = v => Number.isFinite(v) ? Math.max(0, Math.min(1e7, Math.floor(v))) : 0;
+const runId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+const medalValue = { B: 1, A: 2, S: 3 };
+export function huntMedal(r) {
+  if (!r.win) return null;
+  if (r.correct >= 8 && r.rate >= 95 && r.hitsTaken === 0 && r.time > 0 && r.time <= 210) return 'S';
+  return r.correct >= 8 && r.rate >= 85 ? 'A' : 'B';
+}
 export function freshAdventure() {
-  return { version: 1, introSeen: false, completed: [], investigations: {}, materials: { marks: 0, ore: 0, wood: 0, crystal: 0 }, crafted: ['traveler'], equipped: 'traveler', difficulty: 'easy', journal: {}, receipts: [], pendingStory: null };
+  return { version: 1, introSeen: false, completed: [], sideCompleted: [], investigations: {}, materials: Object.fromEntries(Object.keys(MATERIALS).map(k=>[k,0])), crafted: ['traveler'], equipped: 'traveler', upgrades: {}, medals: {}, challengeMedals: {}, anomalies: {}, rankXP: 0, claimed: [], title: null, difficulty: 'easy', journal: {}, receipts: [], pendingStory: null };
 }
 export function normalizeAdventure(raw) {
   const s = freshAdventure();
   if (!raw || typeof raw !== 'object') return s;
   s.introSeen = !!raw.introSeen;
-  // 途中の依頼だけが済んでいる不整合を持ち込まない。
   const completed = unique(raw.completed);
   for (const q of QUESTS) { if (!completed.includes(q.id)) break; s.completed.push(q.id); }
-  for (const q of QUESTS) s.investigations[q.id] = unique(raw.investigations?.[q.id]).filter(x => x === 'trace' || x === 'rune');
+  s.sideCompleted = unique(raw.sideCompleted).filter(id=>SIDE_STORIES.some(q=>q.id===id));
+  for (const q of ALL_QUESTS) s.investigations[q.id] = unique(raw.investigations?.[q.id]).filter(x => x === 'trace' || x === 'rune');
   for (const k of Object.keys(MATERIALS)) s.materials[k] = count(raw.materials?.[k]);
   s.crafted = unique(['traveler', ...unique(raw.crafted)]).filter(id => EQUIPMENT.some(e => e.id === id));
   s.equipped = s.crafted.includes(raw.equipped) ? raw.equipped : 'traveler';
+  for (const id of s.crafted) s.upgrades[id] = Math.min(5, count(raw.upgrades?.[id]));
+  for (const q of ALL_QUESTS) if (medalValue[raw.medals?.[q.id]]) s.medals[q.id] = raw.medals[q.id];
+  for (const [key,value] of Object.entries(raw.challengeMedals || {})) if (medalValue[value] && key.length < 100) s.challengeMedals[key]=value;
+  s.rankXP = raw.rankXP === undefined ? s.completed.length * 80 : count(raw.rankXP);
+  s.claimed = unique(raw.claimed).filter(x=>typeof x==='string').slice(0,30);
+  s.title = s.claimed.includes(raw.title) ? raw.title : null;
   if (['easy', 'normal', 'hard'].includes(raw.difficulty)) s.difficulty = raw.difficulty;
-  for (const q of QUESTS) {
+  for (const q of MONSTER_QUESTS) {
     const j = raw.journal?.[q.enemy];
     if (j && typeof j === 'object') s.journal[q.enemy] = { seen: true, kills: count(j.kills), attacks: unique(j.attacks).filter(x => typeof x === 'string').slice(0, 12), breaks: unique(j.breaks).filter(x => typeof x === 'string').slice(0, 12), best: Number.isFinite(j.best) && j.best > 0 ? j.best : null };
+    s.anomalies[q.enemy] = Math.min(20, count(raw.anomalies?.[q.enemy]));
   }
-  s.receipts = unique(raw.receipts).filter(x => typeof x === 'string').slice(-60);
-  s.pendingStory = s.completed.includes(raw.pendingStory) ? raw.pendingStory : null;
+  s.receipts = unique(raw.receipts).filter(x => typeof x === 'string').slice(-80);
+  s.pendingStory = [...s.completed,...s.sideCompleted].includes(raw.pendingStory) ? raw.pendingStory : null;
   return s;
 }
 
 export class Adventure {
-  constructor(raw = store.get(ADVENTURE_KEY, null), save = s => store.set(ADVENTURE_KEY, s)) {
-    this.state = normalizeAdventure(raw);
-    this._save = save;
-    this.saveFailed = false;
-  }
+  constructor(raw = store.get(ADVENTURE_KEY, null), save = s => store.set(ADVENTURE_KEY, s)) { this.state = normalizeAdventure(raw); this._save = save; this.saveFailed = false; }
   save() { this.saveFailed = this._save(this.state) === false; }
   get nextQuest() { return QUESTS.find(q => !this.state.completed.includes(q.id)) || null; }
   get chaptersDone() { return CHAPTERS.filter((_, i) => QUESTS.filter(q => q.chapter === i).every(q => this.state.completed.includes(q.id))).length; }
-  available(id) { const i = QUESTS.findIndex(q => q.id === id); return i >= 0 && (i === 0 || this.state.completed.includes(QUESTS[i - 1].id)); }
+  get firstArcDone() { return this.state.completed.includes('sixlights'); }
+  get rank() { return Math.min(20, 1 + Math.floor(Math.sqrt(this.state.rankXP / 100))); }
+  available(id) {
+    const q=getQuest(id); if (!q) return false;
+    if (q.side) return this.chaptersDone >= q.unlock && (!q.requires || this.state.sideCompleted.includes(q.requires));
+    const i=QUESTS.indexOf(q); return i===0 || this.state.completed.includes(QUESTS[i-1].id);
+  }
   facility(id) { const f = FACILITIES.find(f => f.id === id); return !!f && this.chaptersDone >= f.chapter; }
   equipment() { return EQUIPMENT.find(e => e.id === this.state.equipped) || EQUIPMENT[0]; }
   seenIntro() { this.state.introSeen = true; this.save(); }
   acknowledgeStory() { this.state.pendingStory = null; this.save(); }
   setDifficulty(value) { if (!['easy', 'normal', 'hard'].includes(value)) return false; this.state.difficulty = value; this.save(); return true; }
   investigate(id, site, answer) {
-    const q = QUESTS.find(q => q.id === id);
+    const q = getQuest(id);
     if (!q || !this.available(id) || !['trace', 'rune'].includes(site)) return false;
     if (site === 'rune' && Number(answer) !== q.answer) return false;
     const sites = this.state.investigations[id] || (this.state.investigations[id] = []);
     if (!sites.includes(site)) sites.push(site);
     this.save(); return true;
   }
+  canAfford(cost) { return !!cost && Object.entries(cost).every(([k,v])=>this.state.materials[k]>=v); }
+  spend(cost) { for (const [k,v] of Object.entries(cost)) this.state.materials[k]-=v; }
   canCraft(id) {
-    const e = EQUIPMENT.find(e => e.id === id);
-    return !!e && this.facility('forge') && !this.state.crafted.includes(id) && Object.entries(e.cost).every(([k, v]) => this.state.materials[k] >= v);
+    const e=EQUIPMENT.find(e=>e.id===id);
+    return !!e && this.facility('forge') && this.chaptersDone >= (e.unlock||0) && !this.state.crafted.includes(id) && this.canAfford(e.cost);
   }
-  craft(id) {
-    if (!this.canCraft(id)) return false;
-    const e = EQUIPMENT.find(e => e.id === id);
-    for (const [k, v] of Object.entries(e.cost)) this.state.materials[k] -= v;
-    this.state.crafted.push(id); this.state.equipped = id; this.save(); return true;
+  craft(id) { if (!this.canCraft(id)) return false; this.spend(EQUIPMENT.find(e=>e.id===id).cost); this.state.crafted.push(id); this.state.equipped=id; this.save(); return true; }
+  equip(id) { if (!this.state.crafted.includes(id)) return false; this.state.equipped=id; this.save(); return true; }
+  upgradeCost(id) {
+    if (!this.state.crafted.includes(id)) return null;
+    const n=this.state.upgrades[id]||0; if (n>=5) return null;
+    return { marks:80*(n+1), ore:4+n*3, crystal:3+n*2, ...(n>=2?{sigil:n-1}:{}), ...(n>=3?{core:n-2}:{}) };
   }
-  equip(id) { if (!this.state.crafted.includes(id)) return false; this.state.equipped = id; this.save(); return true; }
+  canUpgrade(id) { return this.facility('forge') && this.canAfford(this.upgradeCost(id)); }
+  upgrade(id) { if (!this.canUpgrade(id)) return false; this.spend(this.upgradeCost(id)); this.state.upgrades[id]=(this.state.upgrades[id]||0)+1; this.save(); return true; }
+  effectsFor(id=this.state.equipped) {
+    const e=EQUIPMENT.find(e=>e.id===id)||EQUIPMENT[0], n=this.state.upgrades[id]||0;
+    const effects={ damage:1,parts:1,counter:1.5,hp:0,focus:0,potions:0,...e.effects };
+    effects.damage *= 1+n*.035; effects.hp+=n*2; effects.focus=+(effects.focus+n*.4).toFixed(1);
+    return effects;
+  }
   prepareRun(id) {
-    const q = QUESTS.find(q => q.id === id);
-    if (!q || !this.available(id)) return null;
-    const e = this.equipment(), sites = this.state.investigations[id] || [];
-    const effects = { damage: 1, parts: 1, counter: 1.5, hp: 0, focus: 0, potions: 0, ...e.effects };
-    if (sites.includes('trace')) effects.parts += 0.15;
-    if (sites.includes('rune')) effects.focus += 2;
+    const q=getQuest(id); if (!q || !this.available(id)) return null;
+    const effects=this.effectsFor(), sites=this.state.investigations[id]||[];
+    if (sites.includes('trace')) effects.parts+=.15;
+    if (sites.includes('rune')) effects.focus+=2;
     if (this.facility('garden')) effects.potions++;
-    if (this.facility('clinic')) effects.hp += 15;
-    if (this.facility('observatory')) effects.focus += 2;
-    this.state.journal[q.enemy] ||= { seen: true, kills: 0, attacks: [], breaks: [], best: null };
+    if (this.facility('clinic')) effects.hp+=15;
+    if (this.facility('observatory')) effects.focus+=2;
+    this.state.journal[q.enemy] ||= { seen:true,kills:0,attacks:[],breaks:[],best:null };
     this.save();
-    return { id: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, questId: q.id, equipment: e.id, effects, boss: !!q.boss };
+    return { id:runId(),type:q.side?'side':'story',questId:q.id,equipment:this.state.equipped,upgrade:this.state.upgrades[this.state.equipped]||0,effects,boss:!!q.boss,difficulty:this.state.difficulty,encounter:{hp:1,damage:1,speed:1} };
   }
-  finishRun(run, result) {
-    const q = QUESTS.find(q => q.id === run?.questId);
-    if (!q || !this.available(q.id) || this.state.receipts.includes(run.id)) return null;
-    this.state.receipts.push(run.id); this.state.receipts = this.state.receipts.slice(-60);
-    const j = this.state.journal[q.enemy] ||= { seen: true, kills: 0, attacks: [], breaks: [], best: null };
-    j.attacks = unique([...j.attacks, ...(result.attacks || [])]);
-    j.breaks = unique([...j.breaks, ...(result.breaks || [])]);
-    const first = result.win && !this.state.completed.includes(q.id), before = this.chaptersDone;
-    const reward = {};
-    if (result.win) {
-      j.kills++;
-      if (result.time > 0 && (!j.best || result.time < j.best)) j.best = result.time;
-      if (first) { this.state.completed.push(q.id); this.state.pendingStory = q.id; }
-      for (const [k, value] of Object.entries(q.reward)) reward[k] = Math.max(1, Math.floor(value * (first ? 1 : 0.4) * (k === 'marks' && this.facility('market') ? 1.2 : 1)));
-      reward.crystal += unique(result.breaks).length;
-      for (const [k, value] of Object.entries(reward)) this.state.materials[k] += value;
+  prepareChallenge(enemy,tier,condition='normal') {
+    if (!this.firstArcDone || !this.state.journal[enemy] || !ANOMALIES[condition] || !Number.isInteger(tier) || tier<1 || tier>Math.min(20,(this.state.anomalies[enemy]||0)+1)) return null;
+    const q=ALL_QUESTS.find(q=>q.enemy===enemy&&this.available(q.id)); if(!q) return null;
+    const run=this.prepareRun(q.id), c=ANOMALIES[condition];
+    run.type='challenge'; run.tier=tier; run.condition=condition; run.boss=true;
+    run.encounter={hp:(1+tier*.10)*c.hp,damage:(1+tier*.06)*c.damage,speed:c.speed/(1+tier*.025)};
+    run.effects.parts*=c.parts||1;
+    return run;
+  }
+  milestones() {
+    const s=this.state, kills=Object.values(s.journal).reduce((n,j)=>n+j.kills,0), top=Math.max(0,...Object.values(s.anomalies));
+    return [
+      ['firstpath','街道の開拓者',s.completed.length,2,{sigil:2,marks:80}],
+      ['lamplighter','六灯の守り手',this.firstArcDone?1:0,1,{sigil:4,core:2}],
+      ['storyteller','仲間の理解者',s.sideCompleted.length,6,{sigil:5,core:2}],
+      ['returner','海を越える者',s.completed.includes('newdawn')?1:0,1,{sigil:8,core:4}],
+      ['artisan','五段の名工',Math.max(0,...Object.values(s.upgrades)),5,{sigil:4,core:2}],
+      ['hunter','百戦の狩人',kills,100,{sigil:10,core:5}],
+      ['observer','魔獣の探究者',Object.keys(s.journal).length,MONSTER_QUESTS.length,{sigil:6,core:3}],
+      ['perfect','見切りの達人',Object.values(s.medals).filter(x=>x==='S').length,5,{sigil:5,core:2}],
+      ['anomaly','異変を鎮める者',top,10,{sigil:8,core:4}],
+      ['limit','境界を越える者',top,20,{sigil:12,core:6}],
+      ['companions','旅をつなぐ者',s.sideCompleted.length,SIDE_STORIES.length,{sigil:8,core:4}],
+    ].map(([id,name,value,target,reward])=>({id,name,value,target,reward,ready:value>=target,claimed:s.claimed.includes(id)}));
+  }
+  claim(id) {
+    const m=this.milestones().find(m=>m.id===id); if(!m?.ready||m.claimed)return false;
+    for(const [k,v]of Object.entries(m.reward))this.state.materials[k]+=v;
+    this.state.claimed.push(id);this.state.title=id;this.save();return true;
+  }
+  equipTitle(id) { if(!this.milestones().some(m=>m.id===id&&m.claimed))return false;this.state.title=id;this.save();return true; }
+  finishRun(run,result) {
+    const q=getQuest(run?.questId);
+    if(!q||!this.available(q.id)||this.state.receipts.includes(run.id))return null;
+    this.state.receipts.push(run.id);this.state.receipts=this.state.receipts.slice(-80);
+    const j=this.state.journal[q.enemy] ||= {seen:true,kills:0,attacks:[],breaks:[],best:null};
+    j.attacks=unique([...j.attacks,...(result.attacks||[])]);j.breaks=unique([...j.breaks,...(result.breaks||[])]);
+    const list=q.side?this.state.sideCompleted:this.state.completed, challenge=run.type==='challenge';
+    const first=!!result.win&&!challenge&&!list.includes(q.id), before=this.chaptersDone, reward={};
+    const key=challenge?`${q.enemy}:${run.tier}:${run.condition}:${run.difficulty}`:q.id, medal=huntMedal(result);
+    const medals=challenge?this.state.challengeMedals:this.state.medals;
+    if(medal&&(!medals[key]||medalValue[medal]>medalValue[medals[key]]))medals[key]=medal;
+    if(result.win){
+      j.kills++;if(result.time>0&&(!j.best||result.time<j.best))j.best=result.time;
+      if(first){list.push(q.id);this.state.pendingStory=q.id;}
+      if(challenge){
+        const newLevel=run.tier>(this.state.anomalies[q.enemy]||0);this.state.anomalies[q.enemy]=Math.max(run.tier,this.state.anomalies[q.enemy]||0);
+        Object.assign(reward,{marks:70+run.tier*12,ore:4+Math.floor(run.tier/3),crystal:4+Math.floor(run.tier/2),sigil:(newLevel?3:1)+Math.floor(run.tier/5)+ANOMALIES[run.condition].extra,...(run.tier>=5?{core:newLevel?2:1}:{})});
+      }else{
+        for(const [k,value]of Object.entries(q.reward))reward[k]=Math.max(1,Math.floor(value*(first?1:.4)*(k==='marks'&&this.facility('market')?1.2:1)));
+      }
+      reward.crystal=(reward.crystal||0)+unique(result.breaks).length;
+      for(const [k,value]of Object.entries(reward))this.state.materials[k]+=value;
+      this.state.rankXP+=challenge?40+run.tier*10:first?q.side?100:80:20;
     }
-    const facility = this.chaptersDone > before ? FACILITIES.find(f => f.chapter === this.chaptersDone)?.id : null;
+    const facility=this.chaptersDone>before?FACILITIES.find(f=>f.chapter===this.chaptersDone)?.id:null;
     this.save();
-    return { questId: q.id, first, reward, facility, ending: first && q.id === 'sixlights' };
+    return {questId:q.id,first,reward,facility,medal,bestMedal:medals[key]||null,challenge,tier:run.tier,condition:run.condition,enemy:q.enemy,side:!!q.side,rank:this.rank,ending:first&&q.id==='newdawn',arcEnding:first&&q.id==='sixlights'};
   }
 }

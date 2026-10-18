@@ -1,4 +1,4 @@
-"""数学ハンターの新しい10体を、共通リグに結びつけた個別のBlenderモデルとして作る。"""
+"""数学ハンターの追加22体を、共通リグに結びつけた個別のBlenderモデルとして作る。"""
 import bpy
 import math
 import sys
@@ -20,6 +20,9 @@ SPEC = {
     'barza':   ('553a34','8d6750','242627','ff7842',1.30,'magma'),
     'lunax':   ('444263','9383a8','25243c','d1bdff',0.98,'batwing'),
 }
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from expansion_forms import SPEC as EXTRA_SPEC, add_form
+SPEC.update(EXTRA_SPEC)
 if ID not in SPEC: raise SystemExit('Unknown monster: ' + ID)
 skin_h, belly_h, armor_h, light_h, bulk, kind = SPEC[ID]
 
@@ -239,6 +242,8 @@ else:
     ell('tail_club',(0,3.02,-7.39),(0.55,0.51,0.63),armor,'tail4',10)
     for s in (-1,1): spike('tail_club_spike_'+str(s),(s*0.24,3.22,-7.5),(s*0.78,3.58,-7.9),0.13,accent,'tail4')
 
+add_form(ID, globals())
+
 bpy.ops.object.select_all(action='DESELECT')
 for o in pieces: o.select_set(True)
 bpy.context.view_layer.objects.active=pieces[0]
@@ -275,8 +280,8 @@ bpy.context.scene.collection.objects.link(cam); cam.location=(10,-19,10)
 cam.rotation_euler=(Vector((0,-1,3.3))-cam.location).to_track_quat('-Z','Y').to_euler()
 camd.type='ORTHO'; camd.ortho_scale=18.5 if flying else 16.7
 bpy.context.scene.camera=cam
-sc=bpy.context.scene; sc.render.engine='CYCLES'; sc.cycles.samples=24
-sc.render.resolution_x=800; sc.render.resolution_y=600; sc.render.resolution_percentage=100
+sc=bpy.context.scene; sc.render.engine='CYCLES'; sc.cycles.samples=12 if ID in EXTRA_SPEC else 24
+sc.render.resolution_x=800; sc.render.resolution_y=600; sc.render.resolution_percentage=65 if ID in EXTRA_SPEC else 100
 sc.render.image_settings.file_format='PNG'; sc.render.filepath=str(preview)
 bpy.ops.wm.save_as_mainfile(filepath=str(blend))
 bpy.ops.render.render(write_still=True)

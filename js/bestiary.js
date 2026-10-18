@@ -1,4 +1,5 @@
-// 数式バトル用の新しい10体。各個体の場所、間合い、部位、三つの固有技を一か所で管理する。
+import { NEW_BEASTS } from './expansionContent.js';
+// 各個体の場所、間合い、部位、三つの固有技を一か所で管理する。
 const move = (name, motion, pattern, tele, damage, level = 2, hitAt = 1.12) => ({ name, motion, pattern, tele, damage, level, hitAt });
 
 export const BESTIARY = {
@@ -24,6 +25,7 @@ export const BESTIARY = {
     move('影渡り', 'phase', 'target', 5.9, 28), { ...move('三日月の刃', 'sweep', 'adjacent', 7.3, 32), follow: 'other' }, move('大技・月蝕', 'pulse', 'all', 10.6, 51, 3, 1.55)] },
 };
 
+Object.assign(BESTIARY, NEW_BEASTS);
 export const NEW_BEAST_IDS = Object.keys(BESTIARY);
 export const enemyName = id => BESTIARY[id]?.name || ({ zarva: '焔角竜ザルヴァ', sektra: '熔晶竜セクトラ', veira: '蒼翼竜ヴェイラ' }[id] || '焔角竜ザルヴァ');
 export const enemyShort = id => BESTIARY[id]?.short || ({ zarva: 'ザルヴァ', sektra: 'セクトラ', veira: 'ヴェイラ' }[id] || 'ザルヴァ');

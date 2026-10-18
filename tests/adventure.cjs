@@ -38,12 +38,12 @@ const { pathToFileURL } = require('node:url');
     ok(`${q.id}は順番通り開放される`, a.available(q.id));
     a.finishRun(a.prepareRun(q.id), { win: true, time: 100, attacks: ['観察済み'], breaks: [] });
   }
-  ok('13体で6章すべてをクリアできる', a.chaptersDone === CHAPTERS.length && a.state.completed.length === 13 && a.nextQuest === null);
-  ok('最終依頼で広場が完成する', a.facility('plaza') && saved.pendingStory === 'sixlights');
+  ok('追加章も順番通りクリアできる', a.chaptersDone === CHAPTERS.length && a.state.completed.length === QUESTS.length && a.nextQuest === null);
+  ok('最終依頼で広場が完成する', a.facility('plaza') && saved.pendingStory === 'newdawn');
   const support = a.prepareRun('road').effects;
   ok('村と装具の支援が戦闘へ渡る', support.potions === 1 && support.hp === 15 && support.focus === 4 && Math.abs(support.parts - 1.6) < 1e-9);
   const restored = new Adventure(saved, () => true);
-  ok('保存から章・装具・素材・図鑑が復元される', restored.chaptersDone === 6 && restored.state.equipped === 'breaker' && restored.state.materials.ore === a.state.materials.ore && restored.state.journal.raizen.best === 60);
+  ok('保存から章・装具・素材・図鑑が復元される', restored.chaptersDone === CHAPTERS.length && restored.state.equipped === 'breaker' && restored.state.materials.ore === a.state.materials.ore && restored.state.journal.raizen.best === 60);
   restored.acknowledgeStory(); ok('読んだ報告を再表示しない', restored.state.pendingStory === null);
   const malformed = normalizeAdventure({ completed: 4, materials: { marks: -10 }, crafted: ['missing'], equipped: 'missing' });
   ok('壊れた保存データでも安全な初期値へ戻す', malformed.completed.length === 0 && malformed.materials.marks === 0 && malformed.equipped === 'traveler');

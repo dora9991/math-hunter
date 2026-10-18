@@ -10,7 +10,7 @@ import { clamp, dampAngle, Rng, TAU, fmtTime, store } from './util.js';
 import { makeProblem, showNum, TOPICS, LEVELS } from './mathproblems.js';
 import { BESTIARY } from './bestiary.js';
 import { BATTLE_BACKGROUNDS, buildBattlefield } from './battlefield.js';
-import { QUESTS, EQUIPMENT } from './adventure.js';
+import { getQuest, EQUIPMENT, ANOMALIES } from './adventure.js';
 
 export const TEMPO = {
   // k＝予告の長さの倍率、rest＝攻撃と攻撃の間（秒）
@@ -106,7 +106,8 @@ export class MathBattle {
     this.expedition = game.activeAdventure;
     this.attacksSeen = new Set();
     opts = this.opts = resolveOptions(opts);
-    this.tempo = TEMPO[opts.tempo];
+    const speed = this.expedition?.encounter?.speed || 1;
+    this.tempo = { ...TEMPO[opts.tempo], k: TEMPO[opts.tempo].k * speed, rest: TEMPO[opts.tempo].rest * speed };
     this.level = LEVELS[opts.problem];
     this.choice = opts.input !== 'type';   // 4択をタップ（既定）／数字を打つ
     this.rng = new Rng(opts.seed || game.rng.int(1, 1e6));
@@ -138,7 +139,7 @@ export class MathBattle {
     for (const c of CARDS) if (c.id !== 'dodge') this._newProblem(c.id);
     this._onKey = e => this._key(e);
     window.addEventListener('keydown', this._onKey, true);
-    game.message(this.expedition ? `${QUESTS.find(q => q.id === this.expedition.questId).name} 開始！` : '数式バトル 開始！', 'big');
+    game.message(this.expedition?.type === 'challenge' ? `異変討究 Lv.${this.expedition.tier} 開始！` : this.expedition ? `${getQuest(this.expedition.questId).name} 開始！` : '数式バトル 開始！', 'big');
   }
 
   // ---------- 配置 ----------
@@ -151,7 +152,7 @@ export class MathBattle {
     A.y = T.heightAt(A.x, A.z);
     this.A = A;
     m.resetForHunt({ hp: 1, dmg: 1, speed: 1 });
-    m.maxHp = m.hp = Math.round(MATH_HP * this.opts.hp);
+    m.maxHp = m.hp = Math.round(MATH_HP * this.opts.hp * (this.expedition?.encounter?.hp || 1));
     // 頭は怯みにくく（攻めるだけで完封できないように）、脚は転ばせやすく
     m.scripted = true; m.flinchScale = { head: 1.5, legL: 0.6, legR: 0.6 }; m.anchor = A;
     m.pos.set(A.x, T.heightAt(A.x, A.z), A.z);
@@ -192,6 +193,7 @@ export class MathBattle {
       : flying
       ? { back: headFwd + 3.1 + 12.5, behind: 12.5, up: 10.8, lookF: headFwd - 0.5, lookY: 2.6, follow: 0.28 }
       : { back: headFwd + 2.0 + 9.0, behind: 9.0, up: 8.6, lookF: headFwd - 0.6, lookY: 0, follow: 0.3 };
+    this.camBase = { ...this.cam };
     this.camPos = new THREE.Vector3(); this.camLook = new THREE.Vector3(); this.camReady = false;
     this.camera(0);
   }
@@ -353,6 +355,10 @@ export class MathBattle {
     const g = this.game, cam = g.camera, cr = g.camRig, h = g.hunter, A = this.A, c = this.cam;
     // 下のカードにハンターが隠れないよう、足もとが「カードの少し上」に来る角度にする
     if (!(this.camTick = ((this.camTick || 0) + 1) % 20) || this.uiFrac === undefined) {
+      // 縦画面では体格の大きい魔獣も頭まで収まる距離を取る。横画面への回転にも追従する。
+      const fit = clamp(0.62 / cam.aspect, 1, 1.35), base = this.camBase;
+      c.up = base.up * fit; c.behind = base.behind * fit;
+      c.back = base.back + base.behind * (fit - 1);
       const bottom = this.root && this.root.querySelector('.mb-bottom');
       if (bottom && innerHeight && bottom.offsetHeight) this.uiFrac = bottom.offsetHeight / innerHeight;
       const yf = clamp(1 - (this.uiFrac ?? 0.3) - 0.05, 0.55, 0.74);
@@ -765,8 +771,8 @@ export class MathBattle {
     const g = this.game, m = g.monster, h = g.hunter, E = this.enemy, a = E.atk, def = a.def;
     const inLane = a.lanes.includes(this.lane);
     if (a.id === 'crystalPillars' || a.id === 'crystalRupture' || def.beast) {
-      const magic = ['breath','wave','pulse','storm','phase'].includes(def.motion);
-      const heavy = ['quake','slam','root','charge','burrow'].includes(def.motion);
+      const magic = ['breath','wave','pulse','storm','phase','tide','lantern','howl','orbit'].includes(def.motion);
+      const heavy = ['quake','slam','root','charge','burrow','shellguard','comet'].includes(def.motion);
       for (const lane of a.lanes) {
         const spot = this.spots[lane], y = g.world.terrain.heightAt(spot.x, spot.z);
         const at = new THREE.Vector3(spot.x, y + 0.1, spot.z);
@@ -786,7 +792,7 @@ export class MathBattle {
       g.fx.floatText(_v.copy(h.pos).setY(h.pos.y + 2), '回避！', 'status', 1.0);
     } else if (inLane) {
       const taken = h.takeHit({
-        kind: 'hit', damage: def.damage * this.opts.atk * (m.enraged ? 1.25 : 1), knock: def.knock, power: def.power, knockPower: def.knockPower,
+        kind: 'hit', damage: def.damage * this.opts.atk * (this.expedition?.encounter?.damage || 1) * (m.enraged ? 1.25 : 1), knock: def.knock, power: def.power, knockPower: def.knockPower,
         srcX: m.pos.x, srcZ: m.pos.z, guardable: false,
       });
       if (taken) { this.stats.hitsTaken++; this.combo = 0; this.counter = false; this.queue.length = 0; }
@@ -856,6 +862,8 @@ export class MathBattle {
     if (this.expedition) {
       const gear = EQUIPMENT.find(e => e.id === this.expedition.equipment);
       this.result.setup.push(['装具', gear.name], ['調査・村の支援', `集中 +${this.expedition.effects.focus}秒 ／ 部位蓄積 ×${this.expedition.effects.parts.toFixed(2)}`]);
+      if (this.expedition.upgrade) this.result.setup.push(['装具強化', `+${this.expedition.upgrade}`]);
+      if (this.expedition.type === 'challenge') this.result.setup.push(['異変討究', `Lv.${this.expedition.tier} ／ ${ANOMALIES[this.expedition.condition].name}`]);
       if (!g.noRecord) this.result.adventure = g.adventure.finishRun(this.expedition, this.result);
     }
     this.root.classList.add('hidden');

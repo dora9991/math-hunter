@@ -1028,21 +1028,21 @@ const ACTIONS = {
       const fly = BESTIARY[m.variant]?.flying;
       const hit = a.o.hitAt || 1.12, an = m.anchor;
       if (an) {
-        const rush = ['pounce','charge','lance','dive','phase','burrow'].includes(s) ?
+        const rush = ['pounce','charge','lance','dive','phase','burrow','serpent','comet'].includes(s) ?
           1.8 * smooth(phase(a.t, 0.30, hit * 0.92)) * (1 - smooth(phase(a.t, hit + 0.12, 2.65))) : 0;
-        const sidestep = ['claw','sweep','wing','tail','spin'].includes(s) ?
+        const sidestep = ['claw','sweep','wing','tail','spin','shellguard','orbit','scissor'].includes(s) ?
           (a.o.dir || 1) * 0.85 * Math.sin(Math.PI * Math.min(1, a.t / 2.5)) : 0;
         m.pos.x = an.x + an.fx * rush + an.lx * sidestep;
         m.pos.z = an.z + an.fz * rush + an.lz * sidestep;
         m.pos.y = m.game.world.terrain.heightAt(m.pos.x, m.pos.z);
       }
       if (fly) {
-        const jump = ['dive', 'storm', 'phase'].includes(s) ? 2.3 * Math.sin(Math.PI * Math.min(1, a.t / 2.25)) : 0;
+        const jump = ['dive', 'storm', 'phase','comet','orbit'].includes(s) ? (s === 'comet' ? 3.4 : 2.3) * Math.sin(Math.PI * Math.min(1, a.t / 2.25)) : 0;
         m.air = damp(m.air, (m.wingBroken.L || m.wingBroken.R ? 1.1 : 1.85) + jump, 5, dt);
       } else if (['pounce', 'burrow', 'phase'].includes(s)) {
         m.air = Math.sin(Math.PI * Math.min(1, a.t / 1.35)) * (s === 'burrow' ? -0.72 : 1.0);
       }
-      m.glow = ['breath', 'pulse', 'storm', 'quake'].includes(s) ?
+      m.glow = ['breath', 'pulse', 'storm', 'quake','lantern','tide','howl','comet','orbit'].includes(s) ?
         Math.max(0, 0.8 * (1 - Math.abs(a.t - (a.o.hitAt || 1.2)) / 1.2)) : 0;
     },
     pose(m, a, p) {
@@ -1050,7 +1050,37 @@ const ACTIONS = {
       const charge = smooth(phase(t, 0, hit * 0.62)) * (1 - smooth(phase(t, hit * 0.84, hit + 0.06)));
       const swing = smooth(phase(t, hit * 0.76, hit + 0.08)) * (1 - smooth(phase(t, hit + 0.45, 2.8)));
       const side = a.o.dir || 1;
-      if (['charge', 'pounce', 'dive', 'phase', 'burrow'].includes(s)) {
+      if (s === 'scissor') {
+        p[P.wing] = 1.3*charge - .95*swing;
+        p[P.armLX] -= 1.1*charge - .85*swing; p[P.armRX] -= 1.1*charge - .85*swing;
+        p[P.bodyY] = -.3*charge + .16*swing; p[P.pitch] = .2*swing; p[P.headX] += .3*swing;
+      } else if (s === 'shellguard') {
+        p[P.yawOff] = side*(.65*charge - 1.15*swing); p[P.bodyY] = -.5*charge;
+        p[P.wing] = -.6*charge + .9*swing; p[P.roll] = side*.18*swing;
+        p[P.armLX] -= .85*swing; p[P.armRX] -= .85*swing;
+      } else if (s === 'serpent') {
+        p[P.neck1Y] = side*(.65*charge - .9*swing); p[P.tailY] = Math.sin(t*7)*.7*swing;
+        p[P.yawOff] = side*.25*Math.sin(t*5); p[P.jaw] = .6*swing; p[P.neck1X] -= .35*charge;
+        p[P.bodyY] = -.25*charge + .2*swing; p[P.roll] = .16*Math.sin(t*7)*swing;
+      } else if (s === 'tide') {
+        p[P.bodyY] = -.45*charge + .32*swing; p[P.pitch] = -.25*charge + .5*swing;
+        p[P.neck1X] = -.55*charge + .3*swing; p[P.wing] = .9*swing; p[P.tailY] = Math.sin(t*4)*.9*swing;
+        p[P.jaw] = .9*swing;
+      } else if (s === 'lantern') {
+        p[P.bodyY] = .4*charge - .5*swing; p[P.wing] = .8*charge + .35*Math.sin(t*12)*swing;
+        p[P.armLX] -= .7*charge; p[P.armRX] -= .7*charge; p[P.neck1X] -= .3*swing; p[P.jaw] = .65*swing;
+      } else if (s === 'howl') {
+        p[P.pitch] = -.2*charge; p[P.chestX] -= .25*charge; p[P.neck1X] -= .7*charge;
+        p[P.headX] -= .55*charge; p[P.jaw] = 1.05*swing; p[P.bodyY] = .25*charge + .1*Math.sin(t*20)*swing;
+        p[P.wing] = .5*charge;
+      } else if (s === 'orbit') {
+        p[P.yawOff] = side*(.4*charge + 3.8*swing); p[P.roll] = side*.3*swing;
+        p[P.wing] = .85*charge + .35*swing; p[P.tailY] = side*1.1*swing; p[P.neck1X] -= .35*charge;
+      } else if (s === 'comet') {
+        p[P.pitch] = -.65*charge + .9*swing; p[P.bodyY] = .35*charge - .5*swing;
+        p[P.wing] = 1.0*charge - .8*swing; p[P.neck1X] -= .5*charge; p[P.headX] += .5*swing;
+        p[P.armLX] -= 1.2*swing; p[P.armRX] -= 1.2*swing;
+      } else if (['charge', 'pounce', 'dive', 'phase', 'burrow'].includes(s)) {
         p[P.bodyY] = -0.34*charge + 0.16*swing;
         p[P.pitch] = -0.28*charge + 0.52*swing;
         p[P.neck1X] -= 0.42*charge; p[P.headX] += 0.35*swing;
@@ -1087,7 +1117,7 @@ const ACTIONS = {
         if (['quake','slam','root'].includes(s)) {
           p[P.bodyY] -= 0.55*second; p[P.pitch] += 0.34*second;
           p[P.armLX] -= 0.75*second; p[P.armRX] -= 0.75*second;
-        } else if (['claw','sweep','wing','tail'].includes(s)) {
+        } else if (['claw','sweep','wing','tail','scissor','orbit','serpent'].includes(s)) {
           p[P.roll] += side*0.35*second; p[P.yawOff] += side*0.58*second;
           p[P.tailY] -= side*0.88*second; p[P.wing] += 0.55*second;
         } else {

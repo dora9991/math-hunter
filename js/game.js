@@ -20,7 +20,7 @@ import { Menus } from './menus.js';
 import { calcDamage, isBounce, bladeVsHitboxes, shapeHitsHunter } from './combat.js';
 import { GREATSWORD } from './weapons.js';
 import { MathBattle } from './mathbattle.js';
-import { Adventure, QUESTS, CHAPTERS } from './adventure.js';
+import { Adventure, getQuest, CHAPTERS } from './adventure.js';
 
 const DEFAULT_SETTINGS = { sensitivity: 1, invertY: false, mouseCam: true, volume: 0.7, bgm: true, quality: 'mid', bloom: false, numbers: true, monsterHp: false, difficulty: 'normal', weapon: 'gs' };
 // 画質ごとの「描く画素数」の上限（Retina で全画面にしても重くなりすぎないように）
@@ -267,10 +267,18 @@ export class Game {
 
   // 数式バトル（実験）：問題を解くと行動できる。敵は止まらない
   startAdventureQuest(id) {
-    const q = QUESTS.find(q => q.id === id);
+    const q = getQuest(id);
     const run = this.adventure.prepareRun(id);
     if (!q || !run) return false;
-    this.startMathBattle({ level: this.adventure.state.difficulty, enemy: q.enemy, background: q.background || CHAPTERS[q.chapter].id }, run);
+    this.startMathBattle({ level: this.adventure.state.difficulty, enemy: q.enemy, background: q.background || CHAPTERS[q.chapter].background || CHAPTERS[q.chapter].id }, run);
+    return true;
+  }
+
+  startAnomaly(enemy, tier, condition = 'normal') {
+    const run = this.adventure.prepareChallenge(enemy, tier, condition);
+    if (!run) return false;
+    const q = getQuest(run.questId), c = CHAPTERS[q.chapter];
+    this.startMathBattle({ level: this.adventure.state.difficulty, enemy, background: q.background || c.background || c.id }, run);
     return true;
   }
 
