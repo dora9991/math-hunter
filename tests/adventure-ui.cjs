@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const assert = require('node:assert/strict');
 const engine = process.argv[2] === 'webkit' ? 'webkit' : 'chrome';
 const { launch } = require(engine === 'webkit' ? './wk.cjs' : './cdp.cjs');
-const width = Number(process.argv[3] || 1280), height = width < 600 ? 844 : 860;
+const width = Number(process.argv[3] || 1280), height = Number(process.argv.find(a=>a.startsWith('--height='))?.split('=')[1] || (width < 600 ? 844 : 860));
 (async () => {
   const b = await launch({ width, height });
   const dir = path.resolve(__dirname, 'shots'); fs.mkdirSync(dir, { recursive: true });
@@ -16,6 +16,18 @@ const width = Number(process.argv[3] || 1280), height = width < 600 ? 844 : 860;
     p = await b.page(url);
     if (engine === 'chrome') await p.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: width < 600 });
     await p.wait('!!window.__hunt?.game', 40000);
+    if (process.argv.includes('layout')) {
+      await p.eval(`window.__hunt.mathStart({enemy:'silvark',level:'beginner'});window.__hunt.game.hunter.god=true;window.__hunt.advance(3);const b=window.__hunt.game.math;window.__hunt.game.monster.startAction('hold');b.enemy.count=1;b._telegraph(1);b.frame(0);window.__hunt.game.hud.clearMessages();1`);
+      check('横画面の5地点・予告・答えが画面に収まる',await p.eval(`(()=>{const inside=e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth+1&&r.top>=0&&r.bottom<=innerHeight+1;};return [...document.querySelectorAll('.mb-lane button,.mb-warn,.mb-card.mobile-active .mb-choices button')].every(inside)})()`));
+      check('予告と解答欄が重ならない',await p.eval(`document.querySelector('.mb-warn').getBoundingClientRect().right<document.querySelector('.mb-bottom').getBoundingClientRect().left`));
+      await p.shot(path.join(dir,`tactics-${engine}-${width}-landscape.png`));
+      check('ページエラーがない',p.errors().length===0);console.log(JSON.stringify({scenario:'layout',engine,width,height,pass:passed,errors:p.errors()}));return;
+    }
+    if (process.argv.includes('tactics')) {
+      await require('./tactics-browser.cjs')({p,url,dir,width,engine,check});
+      check('実行中のページエラーがない',p.errors().length===0);
+      console.log(JSON.stringify({scenario:'tactics',engine,width,pass:passed,errors:p.errors()}));return;
+    }
     if (process.argv.includes('frontier')) {
       await require('./frontier-browser.cjs')({p,url,dir,width,engine,check});
       check('実行中のページエラーがない',p.errors().length===0);

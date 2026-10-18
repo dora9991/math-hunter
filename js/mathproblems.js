@@ -1,5 +1,6 @@
 // 数式バトルの問題づくり（中1：正の数・負の数／式の値／一次方程式）
 // 答えは必ず整数。three.js に頼らないので node のテストからも読める
+import { ELEMENTARY_TOPICS, elementaryProblem } from './elementaryProblems.js';
 
 const MINUS = '−';
 // 表示用：負の数はかっこ付き
@@ -17,6 +18,7 @@ const termX = a => (a < 0 ? `${MINUS} ${a === -1 ? '' : -a}x` : `+ ${a === 1 ? '
 export const showNum = s => String(s).replace(/-/g, MINUS);
 
 export const TOPICS = {
+  ...ELEMENTARY_TOPICS,
   addsub: '正負の数：たし算・ひき算',
   muldiv: '正負の数：かけ算・わり算',
   mixed: '四則の混じった計算',
@@ -164,7 +166,7 @@ const GEN = {
 };
 
 // コマンドごとの問題の種類。lv：0＝やさしい／1＝ふつう／2＝むずかしい
-export const LEVELS = { easy: 0, normal: 1, hard: 2 };
+export const LEVELS = { elementary:-1, blend:3, easy: 0, normal: 1, hard: 2 };
 export const KINDS = {
   // 左へ：答えが負の数（数直線の左）／右へ：答えが正の数（数直線の右）
   left: (rng, lv) => (lv === 2 ? GEN.addsub3(rng, 'neg') : GEN.addsub(rng, 'neg', lv === 0 ? 5 : 9)),
@@ -198,13 +200,13 @@ export function makeChoices(p, rng, sameSign = false) {
 
 // 他のカードの答え（taken）とぶつからない問題を作る
 export function makeProblem(kind, rng, taken = [], level = 1) {
-  const gen = KINDS[kind];
+  const gen = (r,lv) => lv===-1 ? elementaryProblem(kind,r) : lv===3 ? (r.chance(.6)?elementaryProblem(kind,r):KINDS[kind](r,0)) : KINDS[kind](r,lv);
   let p = null;
   for (let i = 0; i < 300; i++) {
     p = gen(rng, level);
     if (Math.abs(p.answer) > 99) continue;
     if (!taken.some(t => conflicts(t, p.answer))) break;
   }
-  const choices = makeChoices(p, rng, kind === 'left' || kind === 'right');
-  return { text: p.text, pre: p.pre || '', answer: p.answer, ans: String(p.answer), choices, topic: p.topic, kind };
+  const choices = makeChoices(p, rng, p.elementary || kind === 'left' || kind === 'right');
+  return { text: p.text, pre: p.pre || '', answer: p.answer, ans: String(p.answer), choices, topic: p.topic, kind,elementary:!!p.elementary };
 }

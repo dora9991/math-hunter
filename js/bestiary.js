@@ -10,7 +10,7 @@ export const BESTIARY = {
     move('岩盾の突進', 'charge', 'target', 6.2, 30), move('双岩落とし', 'slam', 'sides', 7.0, 31), { ...move('大技・大地崩落', 'quake', 'center', 10.4, 49, 3, 1.45), follow: 'sides' }] },
   morga: { name: '深沼竜モルガ', short: 'モルガ', field: '霧の湖畔', stage: 'marsh', area: 3, x: 53, z: 46, spacing: 4.1, front: 2.5, sidePart: '水鰭', color: 0x6cd9bb, moves: [
     move('沼潜り奇襲', 'burrow', 'target', 6.0, 28), move('泡沫の横噴射', 'breath', 'adjacent', 7.0, 27), { ...move('大技・濁流包囲', 'wave', 'sides', 9.0, 42, 3, 1.36), follow: 'center' }] },
-  frostra: { name: '氷刃竜フロストラ', short: 'フロストラ', field: '凍てつく湖面', stage: 'ice', area: 3, x: 61, z: 53, spacing: 4.5, front: 3.0, sidePart: '氷翼', color: 0xa7eaff, moves: [
+  frostra: { name: '氷刃竜フロストラ', short: 'フロストラ', field: '凍てつく湖面', stage: 'ice', area: 3, x: 61, z: 53, spacing: 4.5, front: 3.0, sidePart: '氷翼', flying: true, color: 0xa7eaff, moves: [
     move('氷刃の刺突', 'lance', 'target', 5.8, 27), { ...move('双氷弧', 'sweep', 'adjacent', 7.2, 30), follow: 'other' }, move('大技・白氷嵐', 'storm', 'all', 10.0, 48, 3, 1.5)] },
   salda: { name: '砂蠍竜サルダ', short: 'サルダ', field: '風化した砂丘', stage: 'dune', area: 2, x: 13, z: -9, spacing: 4.0, front: 1.7, sidePart: '鋏', color: 0xe9bc63, moves: [
     move('毒針一閃', 'tail', 'target', 5.7, 29), { ...move('左右の鋏撃', 'claw', 'sides', 7.3, 31), follow: 'center' }, move('大技・砂塵竜巻', 'spin', 'all', 9.4, 45, 3, 1.42)] },

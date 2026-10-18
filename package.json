@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "node tests/devserver.cjs",
     "build": "node build.mjs",
-    "test": "node tests/run.cjs && node tests/adventure.cjs && node tests/expansion.cjs && node tests/frontier.cjs"
+    "test": "node tests/run.cjs && node tests/adventure.cjs && node tests/expansion.cjs && node tests/frontier.cjs && node tests/tactics.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

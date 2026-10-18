@@ -60,11 +60,13 @@ export function buildBattlefield(game, beast, anchor, spots, requestedBackground
   const world = game.world;
   const before = { top: world.skyMat.uniforms.top.value.clone(), horizon: world.skyMat.uniforms.horizon.value.clone(),
     fog: game.scene.fog.color.clone(), background: game.scene.background.clone(),
-    sun: world.sun.color.clone(), strength: world.sun.intensity,
+    sun: world.sun.color.clone(), strength: world.sun.intensity, colliders:world.colliders,
     scenery: [world.terrainMesh, world.grass, world.water, world.camp, world.nest,
       world.pineMesh, world.leafMesh, ...(world.rockMeshes || []), ...(world.propMeshes || []), ...(world.extras || [])]
       .filter(Boolean).map(o => [o, o.visible]) };
   for (const [o] of before.scenery) o.visible = false;
+  // 非表示の旧フィールドの障害物が、新しい地点や移動経路を塞がないようにする。
+  world.colliders=[];
   world.skyMat.uniforms.top.value.setHex(backdrop.sky);
   world.skyMat.uniforms.horizon.value.setHex(backdrop.horizon);
   game.scene.fog.color.setHex(backdrop.horizon);
@@ -193,7 +195,7 @@ export function buildBattlefield(game, beast, anchor, spots, requestedBackground
       cone(x,z,0.43,1.8,accent);
     }
   }
-  // 各フィールド固有色の照明と、攻撃前にも認識できる三か所の目印。
+  // 各フィールド固有色の照明と、攻撃前にも認識できる各地点の目印。
   const light = new THREE.PointLight(theme.accent, 48, 34, 2);
   light.position.set(anchor.x,t.heightAt(anchor.x,anchor.z)+7,anchor.z); root.add(light);
   for (const spot of spots) {
@@ -208,7 +210,7 @@ export function buildBattlefield(game, beast, anchor, spots, requestedBackground
     game.scene.remove(root);
     world.skyMat.uniforms.top.value.copy(before.top); world.skyMat.uniforms.horizon.value.copy(before.horizon);
     game.scene.fog.color.copy(before.fog); game.scene.background.copy(before.background);
-    world.sun.color.copy(before.sun); world.sun.intensity = before.strength;
+    world.sun.color.copy(before.sun); world.sun.intensity = before.strength; world.colliders=before.colliders;
     for (const [o, visible] of before.scenery) o.visible = visible;
     const geos=new Set(), mats=new Set();
     root.traverse(o=>{ if (o.isMesh) { geos.add(o.geometry); mats.add(o.material); } });

@@ -4,6 +4,8 @@ import { questRoute } from './frontierContent.js';
 import { enemyName } from './bestiary.js';
 import { fmtTime } from './util.js';
 import { regionArt, villageArt, portrait } from './adventureArt.js';
+import { battleProfile } from './battleTactics.js';
+import { PRESETS } from './mathbattle.js';
 
 const esc = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const costText = values => Object.entries(values).map(([k, n]) => `<span class="material ${k}"><i></i>${MATERIALS[k]} <b>${n}</b></span>`).join('');
@@ -81,19 +83,20 @@ export class AdventureUI {
     this.game.homeTab = 'quest';
     if (this.game.settings.bgm) this.game.audio.bgm('prebattle');
     const c = CHAPTERS[q.chapter], sites = this.state.investigations[id] || [], equipped = this.adventure.equipment();
-    const done = (q.side ? this.state.sideCompleted : this.state.completed).includes(id),route=questRoute(q);
+    const done = (q.side ? this.state.sideCompleted : this.state.completed).includes(id),route=questRoute(q),tactics=battleProfile(q.enemy);
     this.main.innerHTML = `<div class="quest-prep" data-quest-id="${q.id}"><button class="text-btn chapter-back">← ${q.side ? '仲間の外伝へ' : `${c.name}の依頼へ`}</button>
       <div class="region-banner compact">${regionArt(q.background || c.art || c.background || c.id, q.place)}<div><span class="eyebrow">${q.side ? 'COMPANION STORY' : q.boss ? 'KEY QUEST' : 'GUILD REQUEST'} · CHAPTER ${c.no}</span><h2>${q.name}</h2><p>${q.place}</p></div></div>
       <div class="quest-brief"><span class="portrait">${portrait(q.person || 'mira')}</span><div><small>${PEOPLE[q.person || 'mira'].name}からの依頼</small><p>${q.brief}</p>${done ? '<button class="text-btn reread-story">達成時の物語を読み返す →</button>' : ''}</div></div>
+      <section class="monster-tactics"><small>戦う地点 ${tactics.points}か所 ／ ${tactics.label}</small><p>${tactics.description}</p><span>体力補正 ×${tactics.hp.toFixed(2)} ／ 攻撃補正 ×${tactics.damage.toFixed(2)}</span></section>
       ${route.length>1?`<section class="quest-route"><div class="eyebrow">HUNTING ROUTE · 狩猟の道のり</div><div>${route.map((s,i)=>`<span><small>${s.kind==='path'?`道中 ${i+1}`:s.kind==='boss'?'ボスとの決戦':'依頼の目標'}</small><b>${enemyName(s.enemy)}</b></span>`).join('<em>→</em>')}</div><p>体力・回復薬・必殺ゲージを引き継ぐ連続戦。10問正解で必殺技が使えます。道中の素材はその場で獲得します。</p></section>`:''}
-      <details class="field-guide" ${q.id === 'road' ? 'open' : ''}><summary>狩りの操作を確認する</summary><p>画面下で行動を選び、4択の答えをタップすると狩人が動きます。赤い攻撃予告が出たら左右へ移動するか、「回避」の問題を解こう。「集中」を押すと、考える時間を作れます。10問正解すると必殺ゲージが満タンに。青い必殺ボタンから「星解・六灯連斬」を放てます。</p></details>
+      <details class="field-guide" ${q.id === 'road' ? 'open' : ''}><summary>狩りの操作を確認する</summary><p>画面下で行動を選び、4択の答えをタップすると狩人が動きます。地点の番号を選び、移動問題に正解するとその地点へ動きます。赤い攻撃予告が出たら安全な地点へ移動するか、「回避」の問題を解こう。「集中」を押すと、考える時間を作れます。10問正解すると必殺ゲージが満タンに。青い必殺ボタンから「星解・六灯連斬」を放てます。</p></details>
       <div class="section-title"><h3>出発前の現地調査</h3><span>任意 · ${sites.length} / 2 記録済み</span></div><div class="research-sites">
         <button class="research-card ${sites.includes('trace') ? 'recorded' : ''}" data-site="trace"><span class="research-symbol">⌁</span><div><small>OBSERVATION</small><b>${q.trace}</b><p>${sites.includes('trace') ? '調査済み · 部位への蓄積 +15%' : '痕跡から敵の攻撃と部位を調べる'}</p></div><em>${sites.includes('trace') ? '✓' : '→'}</em></button>
         <button class="research-card ${sites.includes('rune') ? 'recorded' : ''}" data-site="rune"><span class="research-symbol">⌖</span><div><small>FIELD PUZZLE</small><b>${q.puzzle}</b><p>${sites.includes('rune') ? '調査済み · 集中 +2秒' : '仕掛けを解き、狩りの準備を整える'}</p></div><em>${sites.includes('rune') ? '✓' : '→'}</em></button>
       </div>
       <div class="prep-bottom"><section><div class="section-title"><h3>持っていく装具</h3><button class="text-btn prepare-gear">鍛冶屋へ →</button></div><div class="loadout-options">${EQUIPMENT.filter(e => this.state.crafted.includes(e.id)).map(e => `<button data-loadout="${e.id}" class="${equipped.id === e.id ? 'selected' : ''}" aria-pressed="${equipped.id === e.id}"><i style="background:${e.color}"></i>${e.name}${this.state.upgrades[e.id] ? ` +${this.state.upgrades[e.id]}` : ''}${equipped.id === e.id ? '<span>装備中</span>' : ''}</button>`).join('')}</div><p class="loadout-description">${equipped.detail}</p></section>
       <section class="quest-rewards"><div class="eyebrow">${(q.side ? this.state.sideCompleted : this.state.completed).includes(id) ? '再挑戦の報酬は初回の40%' : 'FIRST CLEAR REWARD'}</div><h3>依頼の報酬</h3><div class="materials">${costText(q.reward)}</div><small>部位を壊すと理石のかけらを追加で獲得。</small></section></div>
-      <div class="expedition-bar"><label>難易度 <select class="adventure-difficulty" aria-label="冒険の難易度"><option value="easy">やさしい</option><option value="normal">ふつう</option><option value="hard">むずかしい</option></select></label><span>どの難易度でも物語は進みます</span><button class="primary depart-adventure">${enemyName(q.enemy)}を狩る <b>→</b></button></div>
+      <div class="expedition-bar"><label>難易度 <select class="adventure-difficulty" aria-label="冒険の難易度">${Object.entries(PRESETS).map(([id,p])=>`<option value="${id}">${p.label}</option>`).join('')}</select></label><span class="difficulty-summary"></span><button class="primary depart-adventure">${enemyName(q.enemy)}を狩る <b>→</b></button></div>
     </div>`;
     this.main.querySelector('.chapter-back').onclick = () => q.side ? this.refresh('guild') : this.chapter(q.chapter);
     this.main.querySelector('.reread-story')?.addEventListener('click', () => this.questStory(q));
@@ -101,7 +104,8 @@ export class AdventureUI {
     this.main.querySelector('.prepare-gear').onclick = () => this.refresh('workshop');
     this.main.querySelectorAll('[data-loadout]').forEach(b => b.onclick = () => { this.adventure.equip(b.dataset.loadout); this.quest(id); });
     const select = this.main.querySelector('.adventure-difficulty'); select.value = this.state.difficulty;
-    select.onchange = () => this.adventure.setDifficulty(select.value);
+    const showDifficulty=()=>{const p=PRESETS[select.value];this.main.querySelector('.difficulty-summary').textContent=`与える ×${p.power} ／ 受ける ×${p.atk} · どの難易度でも物語は進みます`;};
+    select.onchange = () => {this.adventure.setDifficulty(select.value);showDifficulty();};showDifficulty();
     this.main.querySelector('.depart-adventure').onclick = () => this.game.startAdventureQuest(id);
     this.main.scrollTop = 0;
   }

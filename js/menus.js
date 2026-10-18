@@ -7,6 +7,7 @@ import { BESTIARY, NEW_BEAST_IDS, enemyShort } from './bestiary.js';
 import { BATTLE_BACKGROUNDS } from './battlefield.js';
 import { AdventureUI } from './adventureUI.js';
 import { QUESTS } from './adventure.js';
+import { battleProfile } from './battleTactics.js';
 
 const MATH_HELP = `
   <h2>遊び方</h2>
@@ -17,8 +18,9 @@ const MATH_HELP = `
   </table>
   <h3>戦い方</h3>
   <table>
-    <tr><th>立ち位置</th><td>左・中央・右の3か所。中央は頭（弱点）。左右は敵ごとに脚・翼・甲殻など破壊できる部位が変わる</td></tr>
-    <tr><th>敵の攻撃</th><td>予告のあと、赤い円の場所に来る。「左へ／右へ」で逃げるか、「回避」を解いてその場で避ける</td></tr>
+    <tr><th>立ち位置</th><td>敵ごとに3〜5地点。地点の番号をタップして、移動の問題に正解するとそこへ移動。正面は頭、側面は翼や装甲、背後は尾を狙える</td></tr>
+    <tr><th>敵の攻撃</th><td>赤い円の場所に攻撃が来る。追尾は「照準固定」の後に移動。紫の残留攻撃、三段攻撃にも注意。「回避」を解くとその場で避けられる</td></tr>
+    <tr><th>射程と隙</th><td>退避・遠方では剣と必殺技が届かない。高空の敵は側面から翼を狙おう。硬い正面は敵の攻撃後が好機</td></tr>
     <tr><th>回避</th><td>敵の攻撃が強いほど問題が難しい。成功すると次の一撃が1.5倍</td></tr>
     <tr><th>連続正解</th><td>続けて正解するほど攻撃が強くなる（最大1.5倍）。ミスと被弾で0に戻る</td></tr>
     <tr><th>ミス</th><td>正解が緑で示され、1秒動けない。まちがえた問題は結果画面に残る</td></tr>
@@ -109,11 +111,12 @@ export class Menus {
       let cur = resolveOptions(g.settings.math || {});
       main.innerHTML = `
         <div class="quest-card">
-          <div class="quest-rank">中1 数学 ・ 正負の数／文字式／一次方程式</div>
+          <div class="quest-rank">小学生の暗算 〜 中1の発展 ・ 問題と戦い方を選ぼう</div>
           <h2>自由狩猟</h2>
           <p class="quest-desc">行動のひとつひとつに問題と4つの答えがついている。<b>正しい答えをタップした瞬間に、その行動が出る。</b><br>時間は止まらない。敵は予告のあと必ず攻撃してくるので、間に合わなければダメージを受ける。<br><b>スペースキー</b>（または「集中」ボタン）で「集中」＝世界がスローになる（ゲージのぶんだけ。正解すると少し戻る）。</p>
           <label class="math-opt"><span>対戦する敵</span><select class="enemy-choice"><option value="zarva">焔角竜ザルヴァ</option><option value="sektra">熔晶竜セクトラ</option><option value="veira">蒼翼竜ヴェイラ</option>${NEW_BEAST_IDS.map(id => `<option value="${id}">${BESTIARY[id].name}｜${BESTIARY[id].field}</option>`).join('')}</select></label>
           <label class="math-opt"><span>戦う背景</span><select class="background-choice"><option value="auto">おすすめ（敵に合わせる）</option>${Object.entries(BATTLE_BACKGROUNDS).map(([id,b]) => `<option value="${id}">${b.name}</option>`).join('')}</select></label>
+          <div class="free-monster-tactics"></div>
           <div class="math-go">
             <button class="big depart">はじめる</button>
             <div class="diff">難易度：
@@ -121,33 +124,38 @@ export class Menus {
               <label><input type="radio" name="level" value="custom"> カスタム</label>
             </div>
           </div>
+          <p class="damage-preview"></p>
           <div class="math-opts">
             ${Object.entries(OPTIONS).map(([k, d]) => `<label class="math-opt"><span>${d.label}</span><select data-o="${k}">${d.choices.map(c => `<option value="${c[0]}">${c[1]}</option>`).join('')}</select></label>`).join('')}
           </div>
           <table class="quest-table">
-            <tr><th>斬る</th><td>正負の数のかけ算・わり算</td></tr>
-            <tr><th>溜め斬り</th><td>一次方程式（大ダメージ）</td></tr>
-            <tr><th>左へ／右へ</th><td>正負の数のたし算・ひき算（左は答えが負、右は答えが正）</td></tr>
+            <tr><th>斬る</th><td>暗算・単位・時計・お金など／中学生向けは正負の数</td></tr>
+            <tr><th>溜め斬り</th><td>□の計算・図形／中学生向けは一次方程式（大ダメージ）</td></tr>
+            <tr><th>左へ／右へ</th><td>移動先を選んで問題を解く。小学生向けは正の数、中学生向けは正負の数</td></tr>
             <tr><th>回避</th><td>敵の攻撃が強いほど難しい問題。解ければその場で避けて、次の一撃が1.5倍</td></tr>
-            <tr><th>回復</th><td>式の値（3回まで）</td></tr>
+            <tr><th>回復</th><td>おつり・単位・分数／中学生向けは式の値（3回まで）</td></tr>
           </table>
-          <div class="quest-hint">立ち位置は左・中央・右の3か所。<b>中央</b>は頭（弱点）、<b>左右</b>は敵ごとに違う部位を狙える。敵によって間合いとフィールドも変わる。<br>赤い円が出た場所に攻撃が来る。各モンスターは固有技を使い、強力な大技も持つ。左右の部位を壊すと大技を封じられる。連続正解で攻撃が強くなり、ミスすると1秒動けない。<br>問題の難しさ「やさしい」は小さい数と1手の方程式、「むずかしい」は3つの数の計算・2乗・かっこつきの方程式。</div>
+          <div class="quest-hint">敵によって3〜5地点で戦う。退避・遠方では剣と必殺技が届かない。高空の敵は側面から翼を狙い、硬い正面は攻撃後の隙を狙おう。<br>追尾、前方→背後→遠方の三段攻撃、6秒残る危険など、敵ごとの予告を確認しよう。10問正解で必殺ゲージが満タンになる。<br>「入門」は小学生の短い問題。「やさしい」は小学生と中1の基礎を混ぜる。カスタムでは問題・速さ・与える／受けるダメージを別々に選べる。</div>
         </div>`;
       const show = () => {
         main.querySelector(`input[name=level][value="${cur.level}"]`).checked = true;
         main.querySelectorAll('[data-o]').forEach(sel => { sel.value = String(cur[sel.dataset.o]); });
         main.querySelector('.enemy-choice').value = cur.enemy;
         main.querySelector('.background-choice').value = cur.background;
+        const t=battleProfile(cur.enemy);
+        main.querySelector('.free-monster-tactics').innerHTML=`<b>${t.points}地点 · ${t.label}</b><p>${t.description}</p><small>魔獣の個性：体力 ×${t.hp.toFixed(2)} ／ 攻撃 ×${t.damage.toFixed(2)}</small>`;
+        main.querySelector('.damage-preview').textContent=`難易度の補正：与えるダメージ ×${cur.power} ／ 受けるダメージ ×${cur.atk}`;
       };
       const save = () => { const o = Object.assign({}, cur); delete o.seed; g.settings.math = o; g.saveSettings(); };
       show();
       main.querySelectorAll('input[name=level]').forEach(r => r.addEventListener('change', () => {
         if (r.value !== 'custom') cur = resolveOptions({ level: r.value, enemy: cur.enemy, background: cur.background });
+        else cur.level='custom';
         save(); show();
       }));
       main.querySelector('.enemy-choice').addEventListener('change', e => {
         cur.enemy = e.target.value;
-        save();
+        save(); show();
       });
       main.querySelector('.background-choice').addEventListener('change', e => {
         cur.background = e.target.value;

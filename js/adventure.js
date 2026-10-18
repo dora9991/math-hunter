@@ -97,7 +97,7 @@ export function normalizeAdventure(raw) {
   s.pathKills=count(raw.pathKills);s.specials=count(raw.specials);
   s.claimed = unique(raw.claimed).filter(x=>typeof x==='string').slice(0,30);
   s.title = s.claimed.includes(raw.title) ? raw.title : null;
-  if (['easy', 'normal', 'hard'].includes(raw.difficulty)) s.difficulty = raw.difficulty;
+  if (['beginner','easy', 'normal', 'hard'].includes(raw.difficulty)) s.difficulty = raw.difficulty;
   for (const q of MONSTER_QUESTS) {
     const j = raw.journal?.[q.enemy];
     if (j && typeof j === 'object') s.journal[q.enemy] = { seen: true, kills: count(j.kills), attacks: unique(j.attacks).filter(x => typeof x === 'string').slice(0, 12), breaks: unique(j.breaks).filter(x => typeof x === 'string').slice(0, 12), best: Number.isFinite(j.best) && j.best > 0 ? j.best : null };
@@ -124,7 +124,7 @@ export class Adventure {
   equipment() { return EQUIPMENT.find(e => e.id === this.state.equipped) || EQUIPMENT[0]; }
   seenIntro() { this.state.introSeen = true; this.save(); }
   acknowledgeStory() { this.state.pendingStory = null; this.save(); }
-  setDifficulty(value) { if (!['easy', 'normal', 'hard'].includes(value)) return false; this.state.difficulty = value; this.save(); return true; }
+  setDifficulty(value) { if (!['beginner','easy', 'normal', 'hard'].includes(value)) return false; this.state.difficulty = value; this.save(); return true; }
   investigate(id, site, answer) {
     const q = getQuest(id);
     if (!q || !this.available(id) || !['trace', 'rune'].includes(site)) return false;

@@ -729,6 +729,7 @@ export class Monster {
     if (this.alive && this.enraged && Math.random() < dt * 5) g.fx.steam(this.hb.head.wb, _v.set(Math.sin(this.facing), -0.2, Math.cos(this.facing)));
     // ポーズ
     this._computePose(dt);
+    if(this.scripted&&this.flightLevel)this.air=Math.max(this.air,this.flightLevel);
     this._apply(dt);
     // 当たり判定の更新
     for (const hb of this.hitboxes) hb.update();

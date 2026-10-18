@@ -1,6 +1,7 @@
 import { SIDE_STORIES, MONSTER_QUESTS, CHAPTERS, PEOPLE, MATERIALS, ANOMALIES } from './adventure.js';
 import { enemyName } from './bestiary.js';
 import { portrait, regionArt } from './adventureArt.js';
+import { PRESETS } from './mathbattle.js';
 const resources = r => Object.entries(r).map(([k,v])=>`${MATERIALS[k]} ${v}`).join(' ／ ');
 
 export class GuildUI {
@@ -29,9 +30,9 @@ export class GuildUI {
     const q=choices.find(q=>q.enemy===this.enemy), c=CHAPTERS[q.chapter], high=this.s.anomalies[this.enemy]||0, max=Math.min(20,high+1);
     this.tier=Math.max(1,Math.min(this.tier,max));const cond=ANOMALIES[this.condition], key=`${this.enemy}:${this.tier}:${this.condition}:${this.s.difficulty}`;
     body.innerHTML=`<div class="anomaly-intro">${regionArt(c.art||c.background||c.id,c.name)}<div><span class="eyebrow">ANOMALY INVESTIGATION</span><h3>限界を、一つずつ越える。</h3><p>勝つと同じ敵の次のLvが開放。物語の進行には影響しません。</p></div></div>
-      <div class="anomaly-controls"><label>討究する魔獣<select class="anomaly-enemy">${choices.map(x=>`<option value="${x.enemy}">${enemyName(x.enemy)} ／ 最高Lv.${this.s.anomalies[x.enemy]||0}</option>`).join('')}</select></label><label>討究Lv<select class="anomaly-tier">${Array.from({length:max},(_,i)=>`<option value="${i+1}">Lv.${i+1}${i+1>high?' ／ 未踏の強さ':''}</option>`).join('')}</select></label><label>問題と基本難易度<select class="anomaly-difficulty"><option value="easy">やさしい</option><option value="normal">ふつう</option><option value="hard">むずかしい</option></select></label></div>
+      <div class="anomaly-controls"><label>討究する魔獣<select class="anomaly-enemy">${choices.map(x=>`<option value="${x.enemy}">${enemyName(x.enemy)} ／ 最高Lv.${this.s.anomalies[x.enemy]||0}</option>`).join('')}</select></label><label>討究Lv<select class="anomaly-tier">${Array.from({length:max},(_,i)=>`<option value="${i+1}">Lv.${i+1}${i+1>high?' ／ 未踏の強さ':''}</option>`).join('')}</select></label><label>問題と基本難易度<select class="anomaly-difficulty">${Object.entries(PRESETS).map(([id,p])=>`<option value="${id}">${p.label}</option>`).join('')}</select></label></div>
       <div class="anomaly-mutations">${Object.entries(ANOMALIES).map(([id,m])=>`<button data-mutation="${id}" class="${id===this.condition?'selected':''}" aria-pressed="${id===this.condition}"><b>${m.name}</b><p>${m.desc}</p></button>`).join('')}</div>
-      <div class="anomaly-summary"><div><small>${enemyName(this.enemy)}</small><h3>異変討究 Lv.${this.tier}</h3><p>体力 ×${((1+this.tier*.1)*cond.hp).toFixed(2)} ／ 攻撃 ×${((1+this.tier*.06)*cond.damage).toFixed(2)}<br>今回の組み合わせの最高評価：${this.s.challengeMedals[key]||'未達成'}</p></div><div><small>確定報酬</small><p>ギルド貨・鉄鉱石・理石のかけら・勲章<br>${this.tier>=5?'Lv.5以上では古代核も獲得。':'Lv.5から古代核も獲得できる。'}</p><span>敗北しても所持素材と討究Lvは減りません。</span></div></div>
+      <div class="anomaly-summary"><div><small>${enemyName(this.enemy)}</small><h3>異変討究 Lv.${this.tier}</h3><p>難易度：与える ×${PRESETS[this.s.difficulty].power} ／ 受ける ×${PRESETS[this.s.difficulty].atk}<br>討究補正：体力 ×${((1+this.tier*.1)*cond.hp).toFixed(2)} ／ 攻撃 ×${((1+this.tier*.06)*cond.damage).toFixed(2)}<br>今回の組み合わせの最高評価：${this.s.challengeMedals[key]||'未達成'}</p></div><div><small>確定報酬</small><p>ギルド貨・鉄鉱石・理石のかけら・勲章<br>${this.tier>=5?'Lv.5以上では古代核も獲得。':'Lv.5から古代核も獲得できる。'}</p><span>敗北しても所持素材と討究Lvは減りません。</span></div></div>
       <button class="primary depart-anomaly">${cond.name}に挑む · Lv.${this.tier} <span>→</span></button><details class="medal-guide"><summary>達成評価の条件を見る</summary><p>S：正答率95%以上・8問以上正解・被弾0回・3分30秒以内。<br>A：正答率85%以上・8問以上正解。B：討伐成功。<br>討究の評価は、敵・Lv・個体・基本難易度ごとに保存します。</p></details>`;
     const enemy=body.querySelector('.anomaly-enemy');enemy.value=this.enemy;enemy.onchange=()=>{this.enemy=enemy.value;this.tier=Math.min(20,(this.s.anomalies[this.enemy]||0)+1);this.render('anomaly');};
     const tier=body.querySelector('.anomaly-tier');tier.value=this.tier;tier.onchange=()=>{this.tier=Number(tier.value);this.render('anomaly');};

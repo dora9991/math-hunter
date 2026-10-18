@@ -531,7 +531,7 @@ function mathtest(game, api) {
     // やさしい：危ないとき自動でスロー
     api.mathStart({ level: 'easy', seed: 32 });
     c = game.math;
-    check('やさしい：問題も敵もやさしい設定', c.level === 0 && c.opts.slowMode === 'auto' && c.opts.atk === 0.4 && game.monster.maxHp < 1500, `hp=${game.monster.maxHp}`);
+    check('やさしい：問題も敵もやさしい設定', c.level === 3 && c.opts.slowMode === 'auto' && c.opts.atk === 0.4 && game.monster.maxHp < 1500, `hp=${game.monster.maxHp}`);
     until(() => c.slow, 40);
     check('やさしい：当たる3秒前に自動でスロー', c.slow && c.enemy.t < 3.05 && Math.abs(game.timeScale - 0.25) < 1e-6, `t=${c.enemy.t.toFixed(2)} scale=${game.timeScale}`);
     api.mathSolve(c.lane === 1 ? 'left' : 'dodge'); game.tick(1 / 60); game.tick(1 / 60);
@@ -564,11 +564,11 @@ function mathtest(game, api) {
     const main = document.querySelector('.home-main');
     const pick = v => { const r = main.querySelector(`input[name=level][value="${v}"]`); r.checked = true; r.dispatchEvent(new Event('change', { bubbles: true })); };
     pick('easy');
-    check('設定画面：難易度を選ぶと各項目が切り替わる', main.querySelector('[data-o=slowSec]').value === '12' && main.querySelector('[data-o=problem]').value === 'easy' && game.settings.math.slowMode === 'auto');
+    check('設定画面：難易度を選ぶと各項目が切り替わる', main.querySelector('[data-o=slowSec]').value === '12' && main.querySelector('[data-o=problem]').value === 'blend' && game.settings.math.slowMode === 'auto');
     const sel = main.querySelector('[data-o=slowRate]'); sel.value = '0.6'; sel.dispatchEvent(new Event('change', { bubbles: true }));
     check('設定画面：項目を変えるとカスタムになり、保存される', main.querySelector('input[name=level][value=custom]').checked && game.settings.math.slowRate === 0.6 && game.settings.math.slowSec === 12, JSON.stringify(game.settings.math));
     main.querySelector('.depart').click();
-    check('設定画面：その設定で始まる', game.math && game.math.opts.slowRate === 0.6 && game.math.level === 0);
+    check('設定画面：その設定で始まる', game.math && game.math.opts.slowRate === 0.6 && game.math.level === 3);
     game.goHome();
     // 敵ごとのモデル・攻撃・部位
     api.mathStart({ enemy: 'sektra', seed: 40 });

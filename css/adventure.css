@@ -338,3 +338,37 @@ button:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px
  .mb-camp { padding:16px; }.mb-camp section { padding:24px 20px; max-height:calc(100dvh - 32px); }.mb-camp h2 { font-size:26px; }.mb-camp p { font-size:12px; }.camp-status { gap:7px; }.camp-status b { font-size:14px; }
 }
 @media(prefers-reduced-motion:reduce) { .mb-ultimate-fill { transition:none; } }
+
+/* 敵ごとの地点・射程・追尾 */
+.mb-lane { display:flex; gap:5px; pointer-events:auto; }
+.mb-lane button { min-height:31px; padding:4px 7px; font-size:10px; background:#152a32e8; border:1px solid #8db4b96b; color:#c9dfdb; border-radius:3px; touch-action:manipulation; }
+.mb-lane button b { font:13px var(--font-title); color:#ddce9d; margin-right:3px; }
+.mb-lane button.on { border-color:#ffe1a0; color:#fff0cc; background:#635032e8; }.mb-lane button.pending { box-shadow:0 0 0 2px #8bdbf5; }.mb-lane button.danger { border-color:#ce99ef; background:#4c2d65ed; }
+.mb-point-labels { position:absolute; inset:0; pointer-events:none; }.mb-point-labels button { position:absolute; transform:translate(-50%,-50%); pointer-events:auto; padding:0; width:31px; height:31px; border-radius:50%; border:1px solid #abd9e9b0; background:#163744d9; color:#e0f4fa; font:16px var(--font-title); box-shadow:0 2px 7px #0005; }
+.mb-point-labels button.on { background:#a6894ddf; border-color:#ffe3a5; color:white; }.mb-point-labels button.pending { border:2px solid #a7f0ff; }.mb-point-labels button.danger { background:#693d8deb; border-color:#dda7ff; }
+.mb-tactic { width:100%; max-width:1240px; padding:7px 12px; border:1px solid #7fb2ab7a; background:#142d2ce8; color:#d3ebd3; display:flex; align-items:center; justify-content:space-between; gap:10px; border-radius:3px; box-sizing:border-box; }
+.mb-tactic b { font-size:12px; font-weight:500; }.mb-tactic > span { font-size:10px; color:#aac4bb; }.mb-tactic.out-of-range { color:#ffdfa4; border-color:#c0a26d; background:#483822e8; }.mb-card.out-of-range { border-style:dashed; }.mb-card.out-of-range .mb-note { color:#ffd391; }
+.monster-tactics,.free-monster-tactics { border:1px solid #9ab19755; padding:17px 19px; margin:17px 0; background:#8fab7c0d; color:#c6d2b2; }
+.monster-tactics small,.free-monster-tactics b { color:#dbc790; font-size:12px; }.monster-tactics p,.free-monster-tactics p { font-size:12px; line-height:1.9; margin:12px 0; }.monster-tactics span,.free-monster-tactics small { color:#92ac94; font-size:10px; }
+.damage-preview { color:#cbd1a9; font-size:12px; padding:11px 0; line-height:1.9; }
+@media(max-width:900px) {
+ .mb-lane { gap:4px; }.mb-lane button { min-height:31px; font-size:9px; padding:4px 6px; }.mb-lane button b { font-size:12px; margin-right:2px; }
+ .mb-warn { top:calc(max(8px,env(safe-area-inset-top)) + 160px); }.mb-warn-name { font-size:14px; }.mb-warn-where { font-size:10px; white-space:normal; }.mb-warn-tip { font-size:10px; }
+ .mb-tactic { padding:6px 9px; flex-direction:column; align-items:flex-start; gap:4px; }.mb-tactic b { font-size:11px; }.mb-tactic > span { font-size:9px; line-height:1.3; }
+ .mb-point-labels button { width:30px; height:30px; font-size:14px; }.mb-ultimate { min-height:41px; padding:5px 10px; }
+ .monster-tactics { padding:14px; }.monster-tactics p { font-size:11px; }.difficulty-summary { font-size:9px!important; line-height:1.7; }
+}
+
+@media(max-width:900px) {
+ #hud.math .hud-msgs { top:29%; width:calc(100% - 36px); max-width:520px; }
+ #hud.math .msg { white-space:normal; max-width:100%; box-sizing:border-box; padding:6px 10px; font-size:12px; line-height:1.6; text-align:center; }
+ #hud.math .msg.big { font-size:19px; padding:9px 15px; }
+ #hud.math .mon-track { width:min(145px,36vw); }
+}
+
+@media(max-width:900px) and (max-height:480px) {
+ .mb-warn { left:max(10px,env(safe-area-inset-left)); right:auto; width:calc(43vw - 35px); top:calc(max(8px,env(safe-area-inset-top)) + 160px); }
+ .mb-warn-row { flex-wrap:wrap; gap:4px 7px; }.mb-warn-name { font-size:13px; }.mb-warn-sec { font-size:14px; }
+ .mb-tactic { padding:4px 8px; }.mb-tactic > span { display:none; }
+ #hud.math .hud-msgs { left:21.5%; width:calc(43vw - 35px); top:60%; }
+}

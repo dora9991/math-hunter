@@ -30,10 +30,10 @@ module.exports=async({p,url,dir,width,engine,check})=>{
  await feed(10);await fightStage();await p.wait(`window.__hunt.game.mode==='camp'`,10000);
  check('満タンの必殺ゲージを決戦前に温存できる',await p.eval(`window.__hunt.game.math.gauge.value===100&&window.__hunt.game.adventure.state.pathKills===2`));
  await p.clickText('.camp-continue','ボスへ進む');await p.wait(`window.__hunt.game.monster.variant==='gradon'`,10000);
- check('ボス戦に体力・回復薬・必殺ゲージを引き継ぐ',await p.eval(`window.__hunt.game.math.gauge.value===100&&window.__hunt.game.hunter.hp===63&&window.__hunt.game.math.potions===2&&window.__hunt.game.monster.maxHp===1300`));
+ check('ボス戦に体力・回復薬・必殺ゲージを引き継ぐ',await p.eval(`window.__hunt.game.math.gauge.value===100&&window.__hunt.game.hunter.hp===63&&window.__hunt.game.math.potions===2&&window.__hunt.game.monster.maxHp===1560`));
  await p.eval(`window.__hunt.game.math.frame(0);1`);if(width>=900)await p.key('KeyF','f');else await p.clickText('.mb-ultimate','星解');await p.wait(`!!window.__hunt.game.math.special`,10000);
  await p.eval(`window.__hunt.advance(2);1`);
- check('ボスに3連撃の680ダメージが入り、攻撃を止める',await p.eval(`window.__hunt.game.monster.hp===620&&window.__hunt.game.math.stats.specials===2&&window.__hunt.game.math.enemy.phase==='rest'`));
+ check('ボスに難易度補正を反映した3連撃が入り、攻撃を止める',await p.eval(`window.__hunt.game.monster.hp===778&&window.__hunt.game.math.stats.specials===2&&window.__hunt.game.math.enemy.phase==='rest'`));
  await fightStage();await p.wait(`window.__hunt.game.mode==='result'`,10000);
  check('決戦勝利で初めて依頼が達成され、必殺回数が保存される',await p.eval(`window.__hunt.game.lastMath.win&&window.__hunt.game.adventure.state.completed.includes('gate')&&window.__hunt.game.adventure.state.specials===2&&window.__hunt.game.lastMath.pathKills===2&&document.querySelector('.adventure-reward')?.textContent.includes('必殺')`));
  await shot('boss-result');
