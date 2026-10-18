@@ -1,0 +1,44 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const {pathToFileURL}=require('node:url');
+(async()=>{
+ const root=path.resolve(__dirname,'..'),imp=f=>import(pathToFileURL(path.join(root,'js',f)));
+ const {Adventure,QUESTS,CHAPTERS,MONSTER_QUESTS,normalizeAdventure}=await imp('adventure.js');
+ const {PATH_BEASTS,FRONTIER_BOSSES,FRONTIER_BEASTS,FRONTIER_QUESTS,questRoute}=await imp('frontierContent.js');
+ const {SpecialGauge}=await imp('huntFlow.js');let passed=0;
+ const ok=(name,condition)=>{assert.ok(condition,name);passed++;};
+ ok('本編18章61依頼と50種の図鑑がある',CHAPTERS.length===18&&QUESTS.length===61&&MONSTER_QUESTS.length===50);
+ ok('新しい25種は小型12種と大型13種で重複しない',Object.keys(PATH_BEASTS).length===12&&Object.keys(FRONTIER_BOSSES).length===13&&new Set(MONSTER_QUESTS.map(q=>q.enemy)).size===50);
+ ok('ボスへの道中は2戦と決戦、最初の依頼は1戦',QUESTS.filter(q=>q.boss).every(q=>questRoute(q).length===3&&questRoute(q)[2].enemy===q.enemy)&&questRoute(QUESTS[0]).length===1);
+ ok('12種の小型魔獣すべてに本編で出会える',new Set(QUESTS.flatMap(q=>questRoute(q).filter(s=>s.kind==='path').map(s=>s.enemy))).size===12);
+ ok('小型魔獣は体格と体力・攻撃力が低く設定される',Object.values(PATH_BEASTS).every(b=>b.scale<.6&&b.hp<.3&&b.damage<.6&&b.moves.every(m=>m.damage<=22)));
+ const old={introSeen:true,completed:QUESTS.slice(0,37).map(q=>q.id),crafted:['traveler','duelist'],equipped:'duelist',upgrades:{duelist:3},materials:{marks:987,core:7,sigil:11},medals:{newdawn:'S'},anomalies:{raizen:8},sideCompleted:['mira_seed']};
+ const a=new Adventure(old,()=>true);
+ ok('第二部クリア済みのセーブは第13章から続く',a.nextQuest.id==='seedparcel'&&a.chaptersDone===12&&a.state.equipped==='duelist'&&a.state.upgrades.duelist===3&&a.state.materials.core===7&&a.state.medals.newdawn==='S');
+ const run=a.prepareRun('greenpromise');ok('未開放の新章ボスには出発できない',run===null);
+ for(const q of FRONTIER_QUESTS.slice(0,3))a.finishRun(a.prepareRun(q.id),{win:true,time:80});
+ const boss=a.prepareRun('greenpromise'),main=a.state.completed.length,before=a.state.materials.marks;
+ const r=a.finishStage(boss,0,{win:true,time:20,attacks:['石鼻の突進'],breaks:['石棘'],specials:1});
+ ok('道中の勝利で素材と小型の図鑑・討伐数だけが増える',r.marks===36&&a.state.materials.marks===before+36&&a.state.completed.length===main&&a.state.pathKills===1&&a.state.journal.bristle.kills===1&&a.state.journal.bristle.attacks.includes('石鼻の突進'));
+ const money=JSON.stringify(a.state.materials);
+ ok('道中報酬の二重取得と決戦への誤適用を防ぐ',a.finishStage(boss,0,{win:true})===null&&a.finishStage(boss,2,{win:true})===null&&JSON.stringify(a.state.materials)===money);
+ const loss=a.finishRun(boss,{win:false,enemy:'capling',specials:1,time:50});
+ ok('道中で撤退しても受領済み素材・図鑑・必殺記録を失わない',!loss.first&&a.state.completed.length===main&&JSON.stringify(a.state.materials)===money&&a.state.specials===1&&a.state.journal.bristle.kills===1);
+ const again=a.prepareRun('greenpromise');a.finishStage(again,0,{win:true,time:20,specials:1});a.finishStage(again,1,{win:true,time:20,specials:0});
+ a.finishRun(again,{win:true,enemy:'rhinox',time:90,specials:3});
+ ok('必殺回数を道中と決戦で重複加算しない',a.state.specials===4&&a.state.completed.includes('greenpromise'));
+ const direct=a.prepareChallenge('rhinox',1);
+ ok('討究は大型魔獣と直接対戦する',direct.route.length===1&&direct.route[0].enemy==='rhinox');
+ ok('保存から道中討伐数・必殺回数を復元する',normalizeAdventure(a.state).pathKills===3&&normalizeAdventure(a.state).specials===4);
+ for(const q of FRONTIER_QUESTS.slice(4))a.finishRun(a.prepareRun(q.id),{win:true,time:80});
+ ok('第三部24依頼の結末に順番どおり到達できる',a.state.completed.length===61&&a.chaptersDone===18&&!a.nextQuest&&a.state.pendingStory==='worldweave');
+ const gauge=new SpecialGauge();for(let n=0;n<9;n++)gauge.correct();
+ ok('9問では未満、10問の正解で必殺ゲージが満タン',gauge.value===90&&!gauge.ready&&!gauge.consume());gauge.correct();
+ ok('満タンで一度発動すると全消費する',gauge.ready&&gauge.consume()&&gauge.value===0&&!gauge.consume());
+ for(let n=0;n<30;n++)gauge.correct();
+ ok('蓄積は100を上限とし、発動まで維持できる',gauge.value===100&&new SpecialGauge(gauge.value).ready&&new SpecialGauge(-5).value===0);
+ for(const id of Object.keys(FRONTIER_BEASTS)){
+  const b=fs.readFileSync(path.join(root,'assets/models/monster',id+'.glb')),j=JSON.parse(b.subarray(20,20+b.readUInt32LE(12)).toString());
+  ok(`${id}のBlenderモデルと可動骨が存在する`,b.toString('ascii',0,4)==='glTF'&&j.skins.length>0&&['head','wingL','wingR','tail4'].every(n=>j.nodes.some(x=>x.name===n)));
+ }
+ console.log(`道中・必殺・第三部テスト：${passed} 成功 / 0 失敗`);
+})().catch(e=>{console.error(e);process.exitCode=1;});

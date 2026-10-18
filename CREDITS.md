@@ -26,6 +26,7 @@ Blender 5.2.2 をスクリプトで操作して作成。共通の部品は `tool
 | 蒼翼竜ヴェイラ `assets/models/monster/veira.glb`（約0.4MB） | `tools/blender/veira_build.py` | 共通の骨格に左右の翼骨を増やし、翼膜・鉤爪・尾翼を新しく造形 |
 | 新しい10体 `assets/models/monster/{raizen,gradon,morga,frostra,salda,velum,nebra,galdo,barza,lunax}.glb` | `tools/blender/bestiary_build.py -- <ID>` | 共通リグに個別の体格・角・甲殻・鰭・翼・尾と配色を造形。各体の `.blend` とプレビューも保存 |
 | 第二部の12体 `assets/models/monster/{thalass,voltis,mycelia,silvark,ammor,osiron,nivalis,fenrig,corvex,aether,gargant,oraclis}.glb` | `tools/blender/expansion_forms.py` / `tools/blender/build_expansion.py` | 蟹脚・双鎌・菌傘・霜角・黒羽・星環・重盾などを共通リグに造形。編集用 `.blend` とゲーム用GLBを保存 |
+| 第三部13体と道中12体（`sparko`〜`astravor`） | `tools/blender/frontier_forms.py` / `tools/blender/build_frontier.py` | 小獣・兎・虫・蛇・鴉・蝙蝠の小型群と、犀角・島甲・蜘蛛脚・多尾・蛾の翅模様・太陽環・巨象の鼻と牙などを個別に造形。全25体の `.blend` とGLBを保存 |
 | ハンター `assets/models/hunter/hunter.glb`（約2.3MB・3.9万ポリゴン） | `tools/blender/hunter_build.py -- <出力先>` | 体は断面の積み重ね、鎧は厚みのある板 → 鉄・革・布の質感を焼き込み |
 
 作り直すとき：`/Applications/Blender.app/Contents/MacOS/Blender --background --python tools/blender/<スクリプト> -- tools/blender/out` → できた `.glb` を `assets/models/…` へコピー → `node build.mjs`
@@ -34,7 +35,8 @@ Blender 5.2.2 をスクリプトで操作して作成。共通の部品は `tool
 
 - 木・茂み（幹＋葉の板。葉の絵は canvas に描く）・岩・草・雲・水面のさざ波：`js/scenery.js`
 - 大剣・太刀・支給品ボックス・骨・卵・地形・空・新しい10種の戦場装飾：`js/hunter.js` `js/world.js` `js/battlefield.js`
-- 冒険の物語・依頼・復興・外伝・装具強化・討究・称号・狩猟図鑑：`js/adventure.js` `js/expansionContent.js` `js/adventureUI.js` `js/guildUI.js`。村・地域・人物のSVG：`js/adventureArt.js`（オリジナル）
+- 冒険の物語・依頼・復興・外伝・装具強化・討究・称号・狩猟図鑑：`js/adventure.js` `js/expansionContent.js` `js/frontierContent.js` `js/adventureUI.js` `js/guildUI.js`。村・地域・人物のSVG：`js/adventureArt.js`（オリジナル）
+- 道中から決戦へ続く連続戦、正解でためる必殺ゲージと「星解・六灯連斬」：`js/mathbattle.js` `js/huntFlow.js`
 - エフェクト（火花・炎・煙・閃光・焦げ跡）：`js/fx.js`
 - 効果音：Web Audio でその場で合成
 - BGM：ユーザー提供の8曲をブラウザ向け AAC に変換して使用。元ファイルは `タイトルbgm.m4a`、`メニュー画面.m4a`、`戦闘勝利bgm.m4a`、`戦闘敗北bgm.m4a`、`中1の通常戦闘.m4a`、`中3の通常戦闘.m4a`、`章のボス.m4a`、`戦闘よび.m4a`。ゲーム用ファイルは `assets/audio/*.m4a`。

@@ -8,9 +8,10 @@ import { CHARGE } from './weapons.js';
 import { SHARPNESS_MAX } from './config.js';
 import { clamp, dampAngle, Rng, TAU, fmtTime, store } from './util.js';
 import { makeProblem, showNum, TOPICS, LEVELS } from './mathproblems.js';
-import { BESTIARY } from './bestiary.js';
+import { BESTIARY, enemyName } from './bestiary.js';
+import { SpecialGauge } from './huntFlow.js';
 import { BATTLE_BACKGROUNDS, buildBattlefield } from './battlefield.js';
-import { getQuest, EQUIPMENT, ANOMALIES } from './adventure.js';
+import { getQuest, EQUIPMENT, MATERIALS, ANOMALIES } from './adventure.js';
 
 export const TEMPO = {
   // k＝予告の長さの倍率、rest＝攻撃と攻撃の間（秒）
@@ -104,6 +105,9 @@ export class MathBattle {
   constructor(game, opts = {}) {
     this.game = game;
     this.expedition = game.activeAdventure;
+    this.route=this.expedition?.route || [{enemy:opts.enemy||'zarva',kind:'target'}];
+    this.routeIndex=0;this.pathCleared=0;this.stageStart=0;this.stageSpecials=0;this.pathRewards={};this.camp=false;
+    this.gauge=new SpecialGauge();this.special=null;
     this.attacksSeen = new Set();
     opts = this.opts = resolveOptions(opts);
     const speed = this.expedition?.encounter?.speed || 1;
@@ -129,7 +133,7 @@ export class MathBattle {
     this.chargeHold = 0;
     this.over = false; this.endAt = 0;
     this.enemy = { phase: 'intro', t: 0, dur: 1, count: 0, atk: null, last: '' };
-    this.stats = { correct: 0, miss: 0, timeSum: 0, maxCombo: 0, hitsTaken: 0, dodges: 0, sidesteps: 0, stopped: 0, damage: 0, topics: {}, missed: [] };
+    this.stats = { correct: 0, miss: 0, timeSum: 0, maxCombo: 0, hitsTaken: 0, dodges: 0, sidesteps: 0, stopped: 0, damage: 0, specials:0, topics: {}, missed: [] };
     this.it = game._blankIntent();
     this.blank = game._blankIntent();
     this._placeActors();
@@ -152,7 +156,7 @@ export class MathBattle {
     A.y = T.heightAt(A.x, A.z);
     this.A = A;
     m.resetForHunt({ hp: 1, dmg: 1, speed: 1 });
-    m.maxHp = m.hp = Math.round(MATH_HP * this.opts.hp * (this.expedition?.encounter?.hp || 1));
+    m.maxHp = m.hp = Math.round(MATH_HP * this.opts.hp * (beast?.hp||1) * (this.expedition?.encounter?.hp || 1));
     // 頭は怯みにくく（攻めるだけで完封できないように）、脚は転ばせやすく
     m.scripted = true; m.flinchScale = { head: 1.5, legL: 0.6, legR: 0.6 }; m.anchor = A;
     m.pos.set(A.x, T.heightAt(A.x, A.z), A.z);
@@ -224,6 +228,8 @@ export class MathBattle {
         <div class="mb-control-row"><div class="mb-focus"><button class="mb-focus-btn">集中<small>スロー／スペース</small></button><div class="mb-focus-bar"><i></i></div><span class="mb-focus-sec"></span></div><button type="button" class="mb-pause" aria-label="一時停止">一時停止</button></div>
       </div>
       <div class="mb-bottom">
+        <div class="mb-route" aria-label="狩猟の進行"></div>
+        <button type="button" class="mb-ultimate" aria-label="必殺技 星解・六灯連斬" disabled><i class="mb-ultimate-fill" role="progressbar" aria-label="必殺ゲージ" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></i><span class="ultimate-icon">✦</span><span><b>星解・六灯連斬</b><small>10問正解で発動 ／ Fキー</small></span><strong class="mb-ultimate-value">0 / 100</strong></button>
         <div class="mb-mobile-actions" role="group" aria-label="行動を選ぶ">${CARDS.map(c => `<button type="button" data-action="${c.id}" aria-label="${c.name}" aria-pressed="${c.id === 'atk'}"><span>${c.mark}</span>${c.name}</button>`).join('')}</div>
         <div class="mb-cards">${CARDS.map(c => `
           <div class="mb-card" data-id="${c.id}">
@@ -251,6 +257,7 @@ export class MathBattle {
     this.el.focus.classList.toggle('hidden', this.focusMax <= 0);
     $('.mb-focus-btn').addEventListener('click', () => { this.game.audio.start(); this.toggleSlow(); });
     $('.mb-pause').addEventListener('click', () => this.game.pause());
+    $('.mb-ultimate').addEventListener('click',()=>this.unleash());
     this.cards = {};
     this.mobileAction = 'atk';
     for (const c of CARDS) {
@@ -272,6 +279,10 @@ export class MathBattle {
       this.choose(btn.closest('.mb-card').dataset.id, btn.dataset.v);
     });
     this.last = {};
+    this._showRoute();
+  }
+  _showRoute(){
+    this.root.querySelector('.mb-route').innerHTML=this.route.length>1?this.route.map((s,i)=>`<span class="${i<this.routeIndex?'done':i===this.routeIndex?'current':''}">${i<this.routeIndex?'✓':i+1} ${s.kind==='path'?'道中':s.kind==='boss'?'決戦':'目標'} <b>${enemyName(s.enemy)}</b></span>`).join('<em>→</em>'):'';
   }
   selectMobileAction(id) {
     if (!this.cards[id] || this.mobileAction === id) return;
@@ -288,6 +299,11 @@ export class MathBattle {
     const g = this.game, h = g.hunter, E = this.enemy;
     this._set('paused', g.paused, v => this.root.classList.toggle('paused', v));
     this._time(raw);
+    const ult=this.root.querySelector('.mb-ultimate'), ready=this.gauge.ready&&!this.special&&!this.endAt&&!this.over&&!g.paused;
+    ult.disabled=!ready;ult.classList.toggle('ready',ready);
+    this.root.querySelector('.mb-ultimate-fill').style.width=this.gauge.value+'%';
+    this.root.querySelector('.mb-ultimate-fill').setAttribute('aria-valuenow',this.gauge.value);
+    this.root.querySelector('.mb-ultimate-value').textContent=this.special?'発動中':this.gauge.ready?'必殺技を放つ':`${this.gauge.value} / 100`;
     this._set('slow', this.slow, v => this.root.classList.toggle('slow', v));
     if (this.focusMax > 0) {
       this.el.focusBar.style.width = (clamp(this.focus / this.focusMax, 0, 1) * 100).toFixed(1) + '%';
@@ -388,7 +404,7 @@ export class MathBattle {
   // 実時間で進むもの：ミスの硬直・スローのゲージ。世界の速さもここで決める
   _time(raw) {
     const g = this.game, E = this.enemy, o = this.opts;
-    if (g.paused || this.over) return;
+    if (g.paused || this.over || this.camp) return;
     this.rt += raw;
     const locked = this.lockT > 0;
     this.lockT = Math.max(0, this.lockT - raw);
@@ -423,7 +439,7 @@ export class MathBattle {
 
   _enabled(c) {
     const h = this.game.hunter, E = this.enemy;
-    if (!c.prob || this.over || this.endAt || h.state === 'dead') return false;
+    if (!c.prob || this.over || this.endAt || this.camp || this.special || h.state === 'dead') return false;
     if (c.id === 'left') return this.lane > 0;
     if (c.id === 'right') return this.lane < 2;
     if (c.id === 'heal') return this.potions > 0 && h.hp < h.maxHp - 1;
@@ -459,6 +475,7 @@ export class MathBattle {
     const c = e.code;
     let ch = null;
     if (c === 'Space') { e.preventDefault(); if (!e.repeat) this.toggleSlow(); return; }
+    if(c==='KeyF'){e.preventDefault();if(!e.repeat)this.unleash();return;}
     if (/^(Digit|Numpad)\d$/.test(c)) ch = c.slice(-1);
     else if (c === 'Minus' || c === 'NumpadSubtract') ch = '-';
     else if (c === 'Backspace' || c === 'Delete') ch = 'back';
@@ -503,6 +520,8 @@ export class MathBattle {
     const tp = st.topics[c.prob.topic] || (st.topics[c.prob.topic] = { n: 0, time: 0, miss: 0 });
     tp.n++; tp.time += took;
     this.combo++; st.maxCombo = Math.max(st.maxCombo, this.combo);
+    const wasReady=this.gauge.ready;this.gauge.correct();
+    if(!wasReady&&this.gauge.ready){g.sfx('charge3');g.message('必殺技が使える！道中から決戦にも引き継げる', 'good');}
     this.buf = '';
     g.sfx('ui');
     c.el.classList.remove('ok'); void c.el.offsetWidth; c.el.classList.add('ok');
@@ -558,6 +577,8 @@ export class MathBattle {
     this.t += dt;
     if (g.quest) g.quest.time += dt;
     if (this.over) return it;
+    if(this.camp)return it;
+    if(this.special){this._specialStep(dt);return it;}
     if (this.endAt) {
       if (this.t >= this.endAt) this.finish(this.endWin, this.endWin ? `${m.name}を倒した` : '力尽きました');
       else if (this.endWin && h.state === 'drawn' && this.t > this.endAt - 2.2) h.setState('victory', 0.2);
@@ -641,6 +662,70 @@ export class MathBattle {
     const before = m.hp;
     g._applyHunterHit({ hb, point });
     this.stats.damage += before - Math.max(0, m.hp);
+  }
+
+  unleash(){
+    const g=this.game,h=g.hunter,m=g.monster;
+    if(g.mode!=='hunt'||g.paused||this.over||this.endAt||this.camp||this.special||h.state==='dead'||!m.alive||!this.gauge.ready)return false;
+    if(!this.gauge.consume())return false;
+    this.stats.specials++;this.special={t:0,hit:0};this.queue.length=0;this.swing=null;this.wantRoll=false;
+    this.slow=false;this.slowManual=false;g.timeScale=g.forcedTimeScale||1;
+    m.startAction('hold');m.windup=0;m.windKind=null;m.windStyle=null;
+    this.enemy.phase='special';this.enemy.atk=null;this.armed=false;this.cards.dodge.prob=null;
+    h.setState('drawn',0);h.startAttack(h.W.moves.chargeSlash,3);h.iframe=2;
+    g.hud.clearMessages();g.sfx('charge3');g.message('星解・六灯連斬！','big');g.camShake(.5);
+    this.root.classList.add('special-active');return true;
+  }
+  _specialStep(dt){
+    const g=this.game,h=g.hunter,m=g.monster,s=this.special;s.t+=dt;h.iframe=Math.max(h.iframe,.15);
+    const times=[.28,.7,1.12];
+    if(s.hit<3&&s.t>=times[s.hit]){
+      const part=[this.parts[0],'head',this.parts[2]][s.hit],hb=m.hitboxes.find(b=>b.part===part)||m.hb.head,point=hb.wa.clone().lerp(hb.wb,.5);
+      if(m.alive){const before=m.hp,damage=Math.round((s.hit===1?280:200)*(this.expedition?.effects.damage||1));
+        m.receiveHit({part,damage,partDamage:damage*1.4*(this.expedition?.effects.parts||1),point,bounce:false,charged:true,from:h.pos});
+        this.stats.damage+=before-Math.max(0,m.hp);g.fx.hitBurst(point,true,true);g.fx.number(point,damage,true);g.sfx('hitHeavy');g.camShake(.3);
+        g.fx.ring(point,3+s.hit,0xffdfa1,.55,true);g.fx.sparks(point,24,0x9fe7ed,9);
+      }s.hit++;
+    }
+    if(s.t>=1.65||!m.alive){
+      this.special=null;this.root.classList.remove('special-active');h.iframe=Math.max(h.iframe,.3);
+      if(m.alive){m.startAction('hold');this.enemy.phase='rest';this.enemy.atk=null;this.enemy.t=2.5;this.stats.stopped++;}
+    }
+  }
+
+  _camp(){
+    const g=this.game,m=g.monster,q=getQuest(this.expedition.questId),next=this.route[this.routeIndex+1];
+    const stage={win:true,time:(this.clearTime||this.rt)-this.stageStart,attacks:[...this.attacksSeen],breaks:(g.quest.breaks||[]).map(b=>b.name),specials:this.stats.specials-this.stageSpecials};
+    const reward=g.noRecord?{}:g.adventure.finishStage(this.expedition,this.routeIndex,stage)||{};
+    for(const[k,v]of Object.entries(reward))this.pathRewards[k]=(this.pathRewards[k]||0)+v;
+    this.pathCleared++;this.stageSpecials=this.stats.specials;this.camp=true;this.slow=false;this.slowManual=false;g.timeScale=1;g.mode='camp';g.input.captureKeys=false;
+    this.root.classList.add('at-camp');this.markers.visible=false;g.overlays.hud.classList.add('hidden');
+    if(g.settings.bgm)g.audio.bgm('prebattle');
+    const panel=document.createElement('div');panel.className='mb-camp';panel.innerHTML=`<section><span class="eyebrow">PATH ${this.routeIndex+1} CLEARED</span><h2>道中を切り開いた</h2><p>${m.name}を退け、${q.place}の先へ。<br>次は <b>${enemyName(next.enemy)}</b>。</p><div class="camp-status"><span>体力 <b>${Math.ceil(g.hunter.hp)} / ${g.hunter.maxHp}</b></span><span>回復薬 <b>${this.potions}</b></span><span>必殺ゲージ <b>${this.gauge.value} / 100</b></span></div><p class="camp-loot">道中の獲得素材：${Object.entries(reward).filter(([,v])=>v>0).map(([k,v])=>`${MATERIALS[k]} ${v}`).join(' ／ ')||'記録なし'}</p><p class="camp-note">体力・回復薬・必殺ゲージは引き継ぎます。<br>道中で得た素材は、撤退しても失いません。</p><button class="camp-continue primary">${next.kind==='boss'?'ボスへ進む':'道中を進む'} →</button><button class="camp-retire">ここで村へ戻る</button></section>`;
+    this.root.appendChild(panel);panel.querySelector('.camp-continue').onclick=()=>this.nextStage();
+    panel.querySelector('.camp-retire').onclick=()=>{this.camp=false;g.mode='hunt';this.finish(false,'道中から帰還しました');};
+    panel.querySelector('.camp-continue').focus();
+  }
+  nextStage(){
+    if(!this.camp)return false;
+    const g=this.game;this.camp=false;this.routeIndex++;this.stageStart=this.rt;
+    this.root.querySelector('.mb-camp')?.remove();this.root.classList.remove('at-camp');this.special=null;
+    this._disposeField();g.fx.clear();g.hud.clearMessages();g.quest.breaks=[];
+    const stage=this.route[this.routeIndex];this.opts.enemy=stage.enemy;g.monster.setVariant(stage.enemy);
+    if(!g.noRecord)g.adventure.observeEnemy(stage.enemy);
+    this.attacksSeen.clear();this.enemy={phase:'intro',t:0,dur:1,count:0,atk:null,last:''};
+    this.endAt=0;this.endWin=false;this.clearTime=0;this.swing=null;this.queue.length=0;this.lane=1;this.wantRoll=false;this.armed=false;this.lockT=0;this.buf='';this.last={};
+    this._placeActors();this._buildMarkers();
+    for(const c of CARDS)if(c.id!=='dodge')this._newProblem(c.id);this.cards.dodge.prob=null;
+    this._showRoute();g.mode='hunt';g.input.captureKeys=true;g.overlays.hud.classList.remove('hidden');g.hud.last={};
+    if(g.settings.bgm)g.audio.bgm(stage.kind==='boss'?'boss':'battle1');
+    g.message(stage.kind==='boss'?`決戦！${g.monster.name}`:`道中 ${this.routeIndex+1}：${g.monster.name}`,'big');
+    return true;
+  }
+  _disposeField(){
+    const g=this.game;g.scene.remove(this.markers);
+    this.markers?.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.dispose();}});
+    this.battlefield?.dispose();
   }
 
   // ---------- 敵の台本 ----------
@@ -792,7 +877,7 @@ export class MathBattle {
       g.fx.floatText(_v.copy(h.pos).setY(h.pos.y + 2), '回避！', 'status', 1.0);
     } else if (inLane) {
       const taken = h.takeHit({
-        kind: 'hit', damage: def.damage * this.opts.atk * (this.expedition?.encounter?.damage || 1) * (m.enraged ? 1.25 : 1), knock: def.knock, power: def.power, knockPower: def.knockPower,
+        kind: 'hit', damage: def.damage * this.opts.atk * (BESTIARY[m.variant]?.damage||1) * (this.expedition?.encounter?.damage || 1) * (m.enraged ? 1.25 : 1), knock: def.knock, power: def.power, knockPower: def.knockPower,
         srcX: m.pos.x, srcZ: m.pos.z, guardable: false,
       });
       if (taken) { this.stats.hitsTaken++; this.combo = 0; this.counter = false; this.queue.length = 0; }
@@ -831,12 +916,12 @@ export class MathBattle {
   onMonsterDead() {
     const g = this.game;
     if (this.endAt) return;
-    this.endAt = this.t + 3.6; this.endWin = true;
+    this.endAt = this.t + (this.routeIndex<this.route.length-1?1.8:3.6); this.endWin = true;
     this.queue.length = 0;
     this.clearTime = this.rt;
     g.message('討伐成功！', 'big');
     g.sfx('fanfare');
-    if (g.settings.bgm) g.audio.bgm('victory');
+    if (g.settings.bgm && this.routeIndex===this.route.length-1) g.audio.bgm('victory');
   }
   onHunterDown() {
     if (this.endAt) return;
@@ -846,6 +931,7 @@ export class MathBattle {
 
   finish(win, reason) {
     if (this.over) return;
+    if(win&&this.routeIndex<this.route.length-1){if(!this.camp)this._camp();return;}
     this.over = true;
     const g = this.game, st = this.stats;
     const total = st.correct + st.miss;
@@ -858,6 +944,7 @@ export class MathBattle {
       hitsTaken: st.hitsTaken, dodges: st.dodges, sidesteps: st.sidesteps, stopped: st.stopped,
       missed: st.missed.slice(), damage: Math.round(st.damage), monsterLeft: Math.round(Math.max(0, g.monster.hp) / g.monster.maxHp * 100), topics,
       attacks: [...this.attacksSeen], breaks: (g.quest?.breaks || []).map(b => b.name),
+      enemy:g.monster.variant,specials:st.specials,pathKills:this.pathCleared,pathRewards:{...this.pathRewards},route:this.route.map(s=>s.enemy),
     };
     if (this.expedition) {
       const gear = EQUIPMENT.find(e => e.id === this.expedition.equipment);
@@ -889,9 +976,7 @@ export class MathBattle {
     const g = this.game, m = g.monster, h = g.hunter;
     window.removeEventListener('keydown', this._onKey, true);
     this.root.remove();
-    g.scene.remove(this.markers);
-    this.markers.traverse(o => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } });
-    if (this.battlefield) this.battlefield.dispose();
+    this._disposeField();
     m.scripted = false; m.aim = null; m.anchor = null; m.flinchScale = null; m.windup = 0; m.windKind = null; m.windStyle = null;
     h.moveMul = 1;
     g.timeScale = g.forcedTimeScale || 1;
@@ -902,7 +987,7 @@ export class MathBattle {
   get state() {
     const E = this.enemy;
     return {
-      t: +this.t.toFixed(2), rt: +this.rt.toFixed(2), slow: this.slow, focus: +this.focus.toFixed(2), opts: this.opts, lane: this.lane, combo: this.combo, armed: this.armed, potions: this.potions, buf: this.buf,
+      t: +this.t.toFixed(2), rt: +this.rt.toFixed(2), slow: this.slow, focus: +this.focus.toFixed(2), opts: this.opts, lane: this.lane, combo: this.combo, armed: this.armed, potions: this.potions, buf: this.buf, gauge:this.gauge.value,routeIndex:this.routeIndex,camp:this.camp,
       enemy: { phase: E.phase, t: +E.t.toFixed(2), atk: E.atk ? E.atk.id : null, lanes: E.atk ? E.atk.lanes : null },
       cards: Object.fromEntries(Object.values(this.cards).map(c => [c.id, c.prob ? { text: c.prob.text, ans: c.prob.ans, choices: c.prob.choices, on: this._enabled(c) } : null])),
       stats: { ...this.stats, topics: undefined }, over: this.over, time: fmtTime(this.t),

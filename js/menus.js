@@ -299,6 +299,7 @@ export class Menus {
           <tr><th>1問の平均</th><td>${r.avg.toFixed(1)}秒</td></tr>
           <tr><th>最大の連続正解</th><td>${r.maxCombo}問</td></tr>
           <tr><th>受けた攻撃</th><td>${r.hitsTaken}回（回避 ${r.dodges}回・移動でかわした ${r.sidesteps}回・止めた ${r.stopped}回）</td></tr>
+          <tr><th>必殺技</th><td>星解・六灯連斬 ${r.specials||0}回${r.pathKills?` ／ 道中 ${r.pathKills}体討伐`:''}</td></tr>
           <tr><th>スローを使った時間</th><td>${r.slowUsed.toFixed(1)}秒</td></tr>
         </table>
         <div class="result-btns"><button class="big again">もう一度</button> <button class="back">${r.adventure?.challenge ? 'ギルドへ戻る' : r.adventure ? r.win ? '村で報告する' : '村で準備し直す' : '村へ戻る'}</button></div>

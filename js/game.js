@@ -173,7 +173,7 @@ export class Game {
     if (!s.bgm) this.audio.bgm(null);
     else if (this.mode === 'title') this.audio.bgm('title');
     else if (this.mode === 'home') this.audio.bgm(['math', 'quest'].includes(this.homeTab) ? 'prebattle' : 'menu');
-    else if (this.mode === 'hunt') this.audio.bgm(this.math ? this.activeAdventure?.boss ? 'boss' : mathBattleMusic(this.math.opts) : this.monster.inCombat ? 'battle1' : 'prebattle');
+    else if (this.mode === 'hunt') this.audio.bgm(this.math ? this.activeAdventure?.boss && this.math.route[this.math.routeIndex].kind!=='path' ? 'boss' : mathBattleMusic(this.math.opts) : this.monster.inCombat ? 'battle1' : 'prebattle');
     else if (this.mode === 'result') this.audio.bgm((this.quest?.math ? this.lastMath?.win : this.quest?.success) ? 'victory' : 'defeat');
     this.resize();
   }
@@ -270,7 +270,7 @@ export class Game {
     const q = getQuest(id);
     const run = this.adventure.prepareRun(id);
     if (!q || !run) return false;
-    this.startMathBattle({ level: this.adventure.state.difficulty, enemy: q.enemy, background: q.background || CHAPTERS[q.chapter].background || CHAPTERS[q.chapter].id }, run);
+    this.startMathBattle({ level: this.adventure.state.difficulty, enemy: run.route[0].enemy, background: q.background || CHAPTERS[q.chapter].background || CHAPTERS[q.chapter].id }, run);
     return true;
   }
 
@@ -306,7 +306,7 @@ export class Game {
     this.hud.last = {};
     this.input.captureKeys = true;
     this.currentHint = '';
-    if (this.settings.bgm) this.audio.bgm(expedition?.boss ? 'boss' : mathBattleMusic(this.math.opts));
+    if (this.settings.bgm) this.audio.bgm(expedition?.boss && this.math.route[0].kind!=='path' ? 'boss' : mathBattleMusic(this.math.opts));
     this.renderer.domElement.focus();
   }
 

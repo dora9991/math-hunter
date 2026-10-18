@@ -16,6 +16,11 @@ const width = Number(process.argv[3] || 1280), height = width < 600 ? 844 : 860;
     p = await b.page(url);
     if (engine === 'chrome') await p.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: width < 600 });
     await p.wait('!!window.__hunt?.game', 40000);
+    if (process.argv.includes('frontier')) {
+      await require('./frontier-browser.cjs')({p,url,dir,width,engine,check});
+      check('実行中のページエラーがない',p.errors().length===0);
+      console.log(JSON.stringify({scenario:'frontier',engine,width,pass:passed,errors:p.errors()}));return;
+    }
     if (process.argv.includes('expand')) {
       await require('./expansion-browser.cjs')({p,url,dir,width,engine,check});
       check('実行中のページエラーがない', p.errors().length === 0);
@@ -57,7 +62,7 @@ const width = Number(process.argv[3] || 1280), height = width < 600 ? 844 : 860;
     await p.clickText('.depart-adventure', '狩る');
     await p.wait(`window.__hunt.game.mode === 'hunt'`, 10000);
     check('調査と装具の支援が実際の戦闘に入る', await p.eval(`window.__hunt.game.math.focusMax === 15 && window.__hunt.game.math.expedition.effects.parts === 1.15 && window.__hunt.game.activeAdventure.questId === 'road'`));
-    const fight = async () => p.eval(`(()=>{const g=window.__hunt.game, m=g.math;g.hunter.god=true;let next=2;for(let t=0;t<500&&g.mode==='hunt';t+=1/60){g.tick(1/60);if(m.rt>=next&&!m.endAt){const id=m._enabled(m.cards.big)?'big':'atk';if(m._enabled(m.cards[id]))m.choose(id,m.cards[id].prob.answer);next=m.rt+1;}}return {win:g.lastMath?.win,mode:g.mode,completed:g.adventure.state.completed.slice()}})()`);
+    const fight = async () => p.eval(`(()=>{const g=window.__hunt.game, m=g.math;g.hunter.god=true;let next=2;for(let t=0;t<500&&(g.mode==='hunt'||g.mode==='camp');t+=1/60){if(g.mode==='camp')m.nextStage();g.tick(1/60);if(m.rt>=next&&!m.endAt){const id=m._enabled(m.cards.big)?'big':'atk';if(m._enabled(m.cards[id]))m.choose(id,m.cards[id].prob.answer);next=m.rt+1;}}return {win:g.lastMath?.win,mode:g.mode,completed:g.adventure.state.completed.slice()}})()`);
     let result = await fight(); check('実際の戦闘の勝利で依頼が達成になる', result.win && result.mode === 'result' && result.completed.includes('road'));
     check('依頼の報酬が結果画面に載る', await p.eval(`document.querySelector('.adventure-reward').textContent.includes('初回達成')`));
     await p.clickText('.result-btns .back', '村で報告する'); await p.wait(`!!document.querySelector('.story-skip')`, 10000); await p.clickText('.story-skip', '閉じる'); await p.wait(`!document.querySelector('.adv-dialog')`, 10000);
@@ -80,7 +85,7 @@ const width = Number(process.argv[3] || 1280), height = width < 600 ? 844 : 860;
     await p.shot(path.join(dir, `adventure-${engine}-${width}-map.png`));
     check('画面の横にはみ出さない', await p.eval(`document.querySelector('.home-main').scrollWidth <= document.querySelector('.home-main').clientWidth + 1`));
     // 残る地域では戦闘の結果処理を通し、最終章までのUIと支援を確認する。
-    await p.eval(`(()=>{const g=window.__hunt.game;for(const id of ['roots','spring','dunes','scales','snowpath','embers','skyway','stars','crater','guardian','sixlights']){g.startAdventureQuest(id);g.math.clearTime=80;g.math.finish(true,'依頼達成');}g.goHome();1})()`);
+    await p.eval(`(()=>{const g=window.__hunt.game;for(const id of ['roots','spring','dunes','scales','snowpath','embers','skyway','stars','crater','guardian','sixlights']){g.startAdventureQuest(id);while(g.math.routeIndex<g.math.route.length-1){g.math.clearTime=80;g.math.finish(true,'道中達成');g.math.nextStage();}g.math.clearTime=80;g.math.finish(true,'依頼達成');}g.goHome();1})()`);
     check('第一部の報告と完成した村に到達する', await p.eval(`window.__hunt.game.adventure.facility('plaza') && window.__hunt.game.adventure.state.completed.length === 13 && !!document.querySelector('.adv-dialog')`));
     await p.clickText('.story-skip', '閉じる');
     await p.wait(`!document.querySelector('.adv-dialog')`, 10000);

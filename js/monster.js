@@ -88,6 +88,7 @@ export class Monster {
     if (CREATURES[this.variant]) this._buildSkinned(CREATURES[this.variant]);
     else this._buildProcedural();
     this._buildHitboxes();
+    this.root.scale.setScalar(BESTIARY[this.variant]?.scale || 1);
   }
 
   setVariant(variant = 'zarva') {
@@ -745,6 +746,7 @@ export class Monster {
     const br = Math.sin(this.game.time * (this.tired ? 3.2 : 1.6));
     p[P.chestX] += br * 0.02; p[P.neck1X] += br * 0.015;
     if (a && a.def.pose) a.def.pose(this, a, p);
+    if (BESTIARY[this.variant]?.small && p[P.legFK] < .5) legsStandFK(p);
     // 足を引きずる
     if (this.limping && this.alive && (this.state === 'leave' || this.state === 'wander' || this.state === 'approach')) { p[P.roll] += Math.sin(this.game.time * 5) * 0.06; p[P.headX] += 0.15; }
     if (this.tired) { p[P.neck1X] += 0.15; p[P.headX] += 0.1; p[P.jaw] += 0.15; }

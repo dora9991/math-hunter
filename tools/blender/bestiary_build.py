@@ -1,4 +1,4 @@
-"""数学ハンターの追加22体を、共通リグに結びつけた個別のBlenderモデルとして作る。"""
+"""数学ハンターの追加47体を、共通リグに結びつけた個別のBlenderモデルとして作る。"""
 import bpy
 import math
 import sys
@@ -22,6 +22,8 @@ SPEC = {
 }
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from expansion_forms import SPEC as EXTRA_SPEC, add_form
+from frontier_forms import SPEC as FRONTIER_SPEC, add_form as add_frontier_form
+EXTRA_SPEC = {**EXTRA_SPEC, **FRONTIER_SPEC}
 SPEC.update(EXTRA_SPEC)
 if ID not in SPEC: raise SystemExit('Unknown monster: ' + ID)
 skin_h, belly_h, armor_h, light_h, bulk, kind = SPEC[ID]
@@ -31,7 +33,9 @@ def rgb(h):
 def v(p): return Vector((p[0], -p[2], p[1]))
 def mat(name, hexcolor, metal=0, rough=0.65, glow=0, double=False):
     m = bpy.data.materials.new(name)
-    c = rgb(hexcolor); m.diffuse_color = (*c, 1); m.use_nodes = True
+    c = rgb(hexcolor)
+    if ID in FRONTIER_SPEC: c = tuple(x/12.92 if x <= .04045 else ((x+.055)/1.055)**2.4 for x in c)
+    m.diffuse_color = (*c, 1); m.use_nodes = True
     m.use_backface_culling = not double
     b = m.node_tree.nodes.get('Principled BSDF')
     b.inputs['Base Color'].default_value = (*c,1)
@@ -243,6 +247,7 @@ else:
     for s in (-1,1): spike('tail_club_spike_'+str(s),(s*0.24,3.22,-7.5),(s*0.78,3.58,-7.9),0.13,accent,'tail4')
 
 add_form(ID, globals())
+add_frontier_form(ID, globals())
 
 bpy.ops.object.select_all(action='DESELECT')
 for o in pieces: o.select_set(True)

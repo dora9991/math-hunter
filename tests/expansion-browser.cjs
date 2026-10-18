@@ -4,6 +4,8 @@ const {pathToFileURL}=require('node:url');
 module.exports=async({p,url,dir,width,engine,check})=>{
   const {QUESTS,SIDE_STORIES}=await import(pathToFileURL(path.resolve(__dirname,'../js/adventure.js')));
   const {NEW_BEASTS}=await import(pathToFileURL(path.resolve(__dirname,'../js/expansionContent.js')));
+  const {questRoute}=await import(pathToFileURL(path.resolve(__dirname,'../js/frontierContent.js')));
+  const expectedSeen=new Set([...QUESTS.slice(0,13).map(q=>q.enemy),...QUESTS.slice(13,37).flatMap(q=>questRoute(q).map(s=>s.enemy))]).size;
   const legacy={version:1,introSeen:true,completed:QUESTS.slice(0,13).map(q=>q.id),materials:{marks:1800,ore:120,wood:90,crystal:100},crafted:['traveler','breaker'],equipped:'breaker',difficulty:'normal',journal:Object.fromEntries(QUESTS.slice(0,13).map(q=>[q.enemy,{seen:true,kills:1,attacks:[],breaks:[],best:100}])),investigations:{road:['trace','rune']},pendingStory:null};
   const shot=async(name)=>p.shot(path.join(dir,`expansion-${engine}-${width}-${name}.png`));
   const home=async(tab)=>{
@@ -19,8 +21,8 @@ module.exports=async({p,url,dir,width,engine,check})=>{
   await p.goto(url);await p.wait('!!window.__hunt?.game',40000);
   await p.clickText('.title button.start','はじめる');await p.wait(`!!document.querySelector('.village-page')`,10000);
   check('旧セーブから第二部に進み、素材と装具を保持する',await p.eval(`window.__hunt.game.adventure.state.completed.length===13 && window.__hunt.game.adventure.nextQuest.id==='tide_letter' && window.__hunt.game.adventure.state.materials.marks===1800 && window.__hunt.game.adventure.state.equipped==='breaker' && !document.querySelector('.adv-dialog')`));
-  await p.clickText('[data-tab="map"]','世界地図');await p.wait(`document.querySelectorAll('.chapter-card').length===12`,10000);
-  check('12章が表示され、第一部クリアで第7章が開く',await p.eval(`document.querySelectorAll('.chapter-card:not(:disabled)').length===7`));
+  await p.clickText('[data-tab="map"]','世界地図');await p.wait(`document.querySelectorAll('.chapter-card').length===18`,10000);
+  check('18章が表示され、第一部クリアで第7章が開く',await p.eval(`document.querySelectorAll('.chapter-card:not(:disabled)').length===7`));
   await p.eval(`document.querySelector('[data-chapter="6"]').scrollIntoView({block:'center'});1`);await shot('second-journey');
   await noOverflow('スマホでも12章の地図が横にはみ出さない');
   await p.clickText('[data-tab="guild"]','ギルド');await p.wait(`!!document.querySelector('.guild-page')`,10000);
@@ -80,7 +82,7 @@ module.exports=async({p,url,dir,width,engine,check})=>{
   check('敵の種類によって移動地点が変わる',new Set(models.map(m=>JSON.stringify(m.spots))).size>=10);
   console.log(JSON.stringify({newModelBattles:models}));
   // 終盤・再読・全外伝の画面と、更新後の保存を確認。勝敗は共通の結果処理を通す。
-  await p.eval(`(()=>{const g=window.__hunt.game;for(const id of ${JSON.stringify(QUESTS.slice(15).map(q=>q.id))}){g.startAdventureQuest(id);g.math.clearTime=100;g.math.finish(true,'依頼達成');}g.goHome();1})()`);
+  await p.eval(`(()=>{const g=window.__hunt.game;for(const id of ${JSON.stringify(QUESTS.slice(15,37).map(q=>q.id))}){g.startAdventureQuest(id);while(g.math.routeIndex<g.math.route.length-1){g.math.clearTime=100;g.math.finish(true,'道中達成');g.math.nextStage();}g.math.clearTime=100;g.math.finish(true,'依頼達成');}g.goHome();1})()`);
   await p.wait(`!!document.querySelector('.dialogue-copy')`,10000);
   check('本編37依頼の第二部エンディングへ到達する',await p.eval(`window.__hunt.game.adventure.state.completed.length===37 && window.__hunt.game.adventure.chaptersDone===12 && document.querySelector('.adv-dialog').textContent.includes('まだない明日へ')`));
   await shot('ending');await p.clickText('.story-skip','閉じる');await p.wait(`!document.querySelector('.adv-dialog')`,10000);
@@ -95,6 +97,6 @@ module.exports=async({p,url,dir,width,engine,check})=>{
   await p.goto(url);await p.wait('!!window.__hunt?.game',40000);await p.clickText('.title button.start','はじめる');await p.wait(`!!document.querySelector('.village-page')`,10000);
   check('再読込で本編・外伝・強化・称号・討究・評価を保持する',await p.eval(`(()=>{const s=window.__hunt.game.adventure.state;return s.completed.length===37&&s.sideCompleted.length===12&&s.upgrades.breaker===1&&s.title==='firstpath'&&s.anomalies.raizen===1&&!!s.challengeMedals['raizen:1:fierce:normal']&&!document.querySelector('.adv-dialog')})()`));
   await p.clickText('[data-tab="journal"]','狩猟図鑑');await p.wait(`!!document.querySelector('.journal-page')`,10000);
-  check('25種の図鑑がすべて発見済みになる',await p.eval(`document.querySelectorAll('.journal-entry.discovered').length===25`));
+  check('第二部の魔獣と実際に通った道中の魔獣が図鑑に載る',await p.eval(`document.querySelectorAll('.journal-entry.discovered').length===${expectedSeen}`));
   await p.clickText('[data-tab="map"]','世界地図');await p.wait(`!!document.querySelector('.chapter-card')`,10000);await p.eval(`document.querySelector('[data-chapter="6"]').scrollIntoView({block:'start'});1`);await shot('all-chapters');
 };

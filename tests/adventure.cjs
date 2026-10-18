@@ -39,7 +39,7 @@ const { pathToFileURL } = require('node:url');
     a.finishRun(a.prepareRun(q.id), { win: true, time: 100, attacks: ['観察済み'], breaks: [] });
   }
   ok('追加章も順番通りクリアできる', a.chaptersDone === CHAPTERS.length && a.state.completed.length === QUESTS.length && a.nextQuest === null);
-  ok('最終依頼で広場が完成する', a.facility('plaza') && saved.pendingStory === 'newdawn');
+  ok('村を復興したまま第三部の結末へ進む', a.facility('plaza') && saved.pendingStory === 'worldweave');
   const support = a.prepareRun('road').effects;
   ok('村と装具の支援が戦闘へ渡る', support.potions === 1 && support.hp === 15 && support.focus === 4 && Math.abs(support.parts - 1.6) < 1e-9);
   const restored = new Adventure(saved, () => true);

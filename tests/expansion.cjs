@@ -61,15 +61,15 @@ const { pathToFileURL } = require('node:url');
   ok('不足素材で強化を始めず、負数を作らない', !a.upgrade('traveler') && JSON.stringify(a.state.materials)===low);
   a.state.materials.marks=10000;
   ok('追加装具には章による製作条件がある', !a.canCraft('bulwark'));
-  for(const q of QUESTS.slice(13))a.finishRun(a.prepareRun(q.id),good);
-  ok('第二部全24依頼を通して12章を達成する', a.state.completed.length===37 && a.chaptersDone===12 && !a.nextQuest && a.state.pendingStory==='newdawn');
+  for(const q of QUESTS.slice(13,37))a.finishRun(a.prepareRun(q.id),good);
+  ok('第二部全24依頼を通して第三部が開く', a.state.completed.length===37 && a.chaptersDone===12 && a.nextQuest.id==='seedparcel' && a.state.pendingStory==='newdawn');
   ok('新しい装具を製作して装備できる', a.craft('duelist') && a.state.equipped==='duelist' && a.effectsFor().counter===2.25);
   for(const q of SIDE_STORIES)if(!a.state.sideCompleted.includes(q.id)){
     assert.ok(a.available(q.id),q.id);a.finishRun(a.prepareRun(q.id),good);
   }
   ok('4人の外伝12話を完結できる', a.state.sideCompleted.length===12 && a.milestones().find(m=>m.id==='companions').ready);
-  ok('本編・外伝・敵・装具の数が揃う', QUESTS.length===37 && CHAPTERS.length===12 && SIDE_STORIES.length===12 && MONSTER_QUESTS.length===25 && EQUIPMENT.length===8);
-  ok('全49依頼に重複しないIDと解答可能な仕掛け・物語がある', new Set(ALL_QUESTS.map(q=>q.id)).size===49 && ALL_QUESTS.every(q=>q.report.length>=2 && q.choices.length===4 && new Set(q.choices).size===4 && q.choices.includes(q.answer)));
+  ok('本編・外伝・敵・装具の数が揃う', QUESTS.length===61 && CHAPTERS.length===18 && SIDE_STORIES.length===12 && MONSTER_QUESTS.length===50 && EQUIPMENT.length===8);
+  ok('全73依頼に重複しないIDと解答可能な仕掛け・物語がある', new Set(ALL_QUESTS.map(q=>q.id)).size===73 && ALL_QUESTS.every(q=>q.report.length>=2 && q.choices.length===4 && new Set(q.choices).size===4 && q.choices.includes(q.answer)));
   for(const [id,beast]of Object.entries(NEW_BEASTS)){
     const bytes=fs.readFileSync(path.join(root,'assets/models/monster',id+'.glb'));
     const json=JSON.parse(bytes.subarray(20,20+bytes.readUInt32LE(12)).toString('utf8'));

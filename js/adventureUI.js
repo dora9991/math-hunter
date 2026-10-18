@@ -1,5 +1,6 @@
 import { CHAPTERS, QUESTS, PEOPLE, FACILITIES, EQUIPMENT, MATERIALS, SIDE_STORIES, MONSTER_QUESTS, getQuest, ANOMALIES } from './adventure.js';
 import { GuildUI } from './guildUI.js';
+import { questRoute } from './frontierContent.js';
 import { enemyName } from './bestiary.js';
 import { fmtTime } from './util.js';
 import { regionArt, villageArt, portrait } from './adventureArt.js';
@@ -61,7 +62,7 @@ export class AdventureUI {
       <div class="journey-progress"><span>物語の進行</span><div><i style="width:${this.state.completed.length / QUESTS.length * 100}%"></i></div><b>${this.state.completed.length} / ${QUESTS.length}</b></div>
       <div class="chapter-grid">${CHAPTERS.map((c, i) => {
         const qs = QUESTS.filter(q => q.chapter === i), open = a.available(qs[0].id), n = qs.filter(q => this.state.completed.includes(q.id)).length;
-        return `${i===0?'<div class="atlas-part">第一部 · 六つの理石</div>':i===6?'<div class="atlas-part">第二部 · 海の向こうの灯</div>':''}<button class="chapter-card ${open ? '' : 'locked'} ${n === qs.length ? 'cleared' : ''}" data-chapter="${i}" ${open ? '' : 'disabled'} style="--chapter-color:${c.color}">${regionArt(c.art || c.background || c.id, c.name)}<div class="chapter-number">${c.no}</div><div class="chapter-copy"><small>${open ? n === qs.length ? '理石の灯が戻った' : `依頼 ${n} / ${qs.length}` : '前の地域をクリアすると開放'}</small><h3>${c.name}</h3><p>${c.title}</p></div><span class="chapter-arrow">${open ? '↗' : '◇'}</span></button>`;
+        return `${i===0?'<div class="atlas-part">第一部 · 六つの理石</div>':i===6?'<div class="atlas-part">第二部 · 海の向こうの灯</div>':i===12?'<div class="atlas-part">第三部 · 種を運ぶ者たち</div>':''}<button class="chapter-card ${open ? '' : 'locked'} ${n === qs.length ? 'cleared' : ''}" data-chapter="${i}" ${open ? '' : 'disabled'} style="--chapter-color:${c.color}">${regionArt(c.art || c.background || c.id, c.name)}<div class="chapter-number">${c.no}</div><div class="chapter-copy"><small>${open ? n === qs.length ? '章の物語を達成' : `依頼 ${n} / ${qs.length}` : '前の地域をクリアすると開放'}</small><h3>${c.name}</h3><p>${c.title}</p></div><span class="chapter-arrow">${open ? '↗' : '◇'}</span></button>`;
       }).join('')}</div></div>`;
     this.main.querySelectorAll('[data-chapter]').forEach(b => b.onclick = () => this.chapter(Number(b.dataset.chapter)));
   }
@@ -80,11 +81,12 @@ export class AdventureUI {
     this.game.homeTab = 'quest';
     if (this.game.settings.bgm) this.game.audio.bgm('prebattle');
     const c = CHAPTERS[q.chapter], sites = this.state.investigations[id] || [], equipped = this.adventure.equipment();
-    const done = (q.side ? this.state.sideCompleted : this.state.completed).includes(id);
+    const done = (q.side ? this.state.sideCompleted : this.state.completed).includes(id),route=questRoute(q);
     this.main.innerHTML = `<div class="quest-prep" data-quest-id="${q.id}"><button class="text-btn chapter-back">← ${q.side ? '仲間の外伝へ' : `${c.name}の依頼へ`}</button>
       <div class="region-banner compact">${regionArt(q.background || c.art || c.background || c.id, q.place)}<div><span class="eyebrow">${q.side ? 'COMPANION STORY' : q.boss ? 'KEY QUEST' : 'GUILD REQUEST'} · CHAPTER ${c.no}</span><h2>${q.name}</h2><p>${q.place}</p></div></div>
       <div class="quest-brief"><span class="portrait">${portrait(q.person || 'mira')}</span><div><small>${PEOPLE[q.person || 'mira'].name}からの依頼</small><p>${q.brief}</p>${done ? '<button class="text-btn reread-story">達成時の物語を読み返す →</button>' : ''}</div></div>
-      <details class="field-guide" ${q.id === 'road' ? 'open' : ''}><summary>狩りの操作を確認する</summary><p>画面下で行動を選び、4択の答えをタップすると狩人が動きます。赤い攻撃予告が出たら左右へ移動するか、「回避」の問題を解こう。「集中」を押すと、考える時間を作れます。</p></details>
+      ${route.length>1?`<section class="quest-route"><div class="eyebrow">HUNTING ROUTE · 狩猟の道のり</div><div>${route.map((s,i)=>`<span><small>${s.kind==='path'?`道中 ${i+1}`:s.kind==='boss'?'ボスとの決戦':'依頼の目標'}</small><b>${enemyName(s.enemy)}</b></span>`).join('<em>→</em>')}</div><p>体力・回復薬・必殺ゲージを引き継ぐ連続戦。10問正解で必殺技が使えます。道中の素材はその場で獲得します。</p></section>`:''}
+      <details class="field-guide" ${q.id === 'road' ? 'open' : ''}><summary>狩りの操作を確認する</summary><p>画面下で行動を選び、4択の答えをタップすると狩人が動きます。赤い攻撃予告が出たら左右へ移動するか、「回避」の問題を解こう。「集中」を押すと、考える時間を作れます。10問正解すると必殺ゲージが満タンに。青い必殺ボタンから「星解・六灯連斬」を放てます。</p></details>
       <div class="section-title"><h3>出発前の現地調査</h3><span>任意 · ${sites.length} / 2 記録済み</span></div><div class="research-sites">
         <button class="research-card ${sites.includes('trace') ? 'recorded' : ''}" data-site="trace"><span class="research-symbol">⌁</span><div><small>OBSERVATION</small><b>${q.trace}</b><p>${sites.includes('trace') ? '調査済み · 部位への蓄積 +15%' : '痕跡から敵の攻撃と部位を調べる'}</p></div><em>${sites.includes('trace') ? '✓' : '→'}</em></button>
         <button class="research-card ${sites.includes('rune') ? 'recorded' : ''}" data-site="rune"><span class="research-symbol">⌖</span><div><small>FIELD PUZZLE</small><b>${q.puzzle}</b><p>${sites.includes('rune') ? '調査済み · 集中 +2秒' : '仕掛けを解き、狩りの準備を整える'}</p></div><em>${sites.includes('rune') ? '✓' : '→'}</em></button>
@@ -140,12 +142,12 @@ export class AdventureUI {
   journal() {
     const seen = Object.keys(this.state.journal).length;
     this.main.innerHTML = `<div class="journal-page">${heading('HUNTER’S FIELD JOURNAL', '狩猟図鑑', `出会った魔獣、見た攻撃、壊した部位。あなたの冒険が記録になる。 ${seen} / ${MONSTER_QUESTS.length} 種を発見`)}
-      <div class="journal-grid">${MONSTER_QUESTS.map(q => { const j = this.state.journal[q.enemy], c = CHAPTERS[q.chapter]; return `<article class="journal-entry ${j ? 'discovered' : ''}"><div class="journal-crest" style="--chapter-color:${c.color}">${j ? c.no : '？'}</div><div class="journal-details"><small>${c.name}</small><h3>${j ? enemyName(q.enemy) : 'まだ出会っていない魔獣'}</h3>${j ? `<div class="journal-stats">討伐 ${j.kills} 回${j.best ? ` · 最速 ${fmtTime(j.best)}` : ''}</div><p>${j.attacks.length ? `観察した攻撃：${j.attacks.map(esc).join(' ／ ')}` : '攻撃を観察すると、ここに記録されます。'}</p><p>${j.breaks.length ? `部位破壊：${j.breaks.map(esc).join(' ／ ')}` : '破壊した部位の記録はまだありません。'}</p><details><summary>生態調査の手がかり</summary><p>${(this.state.investigations[q.id] || []).includes('trace') ? q.clue : '依頼の現地調査で、痕跡を調べよう。'}</p></details>` : '<p>世界地図から依頼を進めよう。</p>'}</div></article>`; }).join('')}</div></div>`;
+      <div class="journal-grid">${MONSTER_QUESTS.map(q => { const j = this.state.journal[q.enemy], c = CHAPTERS[q.chapter]; return `<article class="journal-entry ${j ? 'discovered' : ''}"><div class="journal-crest" style="--chapter-color:${c.color}">${j ? c.no : '？'}</div><div class="journal-details"><small>${c.name}</small><h3>${j ? enemyName(q.enemy) : 'まだ出会っていない魔獣'}</h3>${j ? `<div class="journal-stats">討伐 ${j.kills} 回${j.best ? ` · 最速 ${fmtTime(j.best)}` : ''}</div><p>${j.attacks.length ? `観察した攻撃：${j.attacks.map(esc).join(' ／ ')}` : '攻撃を観察すると、ここに記録されます。'}</p><p>${j.breaks.length ? `部位破壊：${j.breaks.map(esc).join(' ／ ')}` : '破壊した部位の記録はまだありません。'}</p><details><summary>生態調査の手がかり</summary><p>${q.small || (this.state.investigations[q.id] || []).includes('trace') ? q.clue : '依頼の現地調査で、痕跡を調べよう。'}</p></details>` : '<p>世界地図から依頼を進めよう。</p>'}</div></article>`; }).join('')}</div></div>`;
   }
   resultHTML(result) {
     const r=result.adventure,q=getQuest(r?.questId);if(!q)return '';
     const f=FACILITIES.find(f=>f.id===r.facility);
-    return `<div class="adventure-reward"><span class="eyebrow">${r.challenge?`ANOMALY LV.${r.tier} · ${ANOMALIES[r.condition].name}`:r.ending?'SECOND JOURNEY COMPLETE':r.arcEnding?'第一部 完 · 第二部と討究を開放':r.side?'COMPANION STORY':r.first?'REQUEST COMPLETE · 初回達成':result.win?'REQUEST COMPLETE · 再挑戦':'FIELD REPORT'}</span><h3>${r.challenge?enemyName(r.enemy):q.name}${r.medal?`<span class="hunt-medal medal-${r.medal}">${r.medal}</span>`:''}</h3>${result.win?`<div class="materials">${costText(r.reward)}</div><div class="guild-result-rank">ハンターランク HR ${r.rank} · ${r.medal==='S'?'見切りの狩り、S評価！':r.medal==='A'?'正確な狩り、A評価！':'次は被弾や正答率も意識してみよう。'}</div>${f?`<div class="facility-unlocked">✧ ${f.name}が完成！<small>${f.desc}</small></div>`:''}`:'<p>失った素材はありません。観察した攻撃は図鑑に記録されました。調査・装具・強化を見直して、もう一度挑もう。</p>'}</div>`;
+    return `<div class="adventure-reward"><span class="eyebrow">${r.challenge?`ANOMALY LV.${r.tier} · ${ANOMALIES[r.condition].name}`:r.ending?'THIRD JOURNEY COMPLETE':r.secondArcEnding?'第二部 完 · 第三部を開放':r.arcEnding?'第一部 完 · 第二部と討究を開放':r.side?'COMPANION STORY':r.first?'REQUEST COMPLETE · 初回達成':result.win?'REQUEST COMPLETE · 再挑戦':'FIELD REPORT'}</span><h3>${r.challenge?enemyName(r.enemy):q.name}${r.medal?`<span class="hunt-medal medal-${r.medal}">${r.medal}</span>`:''}</h3>${result.win?`<div class="materials">${costText(r.reward)}</div><div class="guild-result-rank">ハンターランク HR ${r.rank} · ${r.medal==='S'?'見切りの狩り、S評価！':r.medal==='A'?'正確な狩り、A評価！':'次は被弾や正答率も意識してみよう。'}</div>${f?`<div class="facility-unlocked">✧ ${f.name}が完成！<small>${f.desc}</small></div>`:''}`:'<p>失った素材はありません。観察した攻撃は図鑑に記録されました。調査・装具・強化を見直して、もう一度挑もう。</p>'}${result.pathKills?`<p class="guild-result-rank">道中 ${result.pathKills}体討伐 ／ 道中の素材は受け取り済み</p>`:''}<p class="guild-result-rank">必殺技 ${result.specials||0}回</p></div>`;
   }
   showArrival() {
     if (!this.state.introSeen) {
@@ -160,7 +162,7 @@ export class AdventureUI {
     }
   }
   questStory(q, onDone) {
-    this.dialogue(q.report.map((text, i) => ({ person: q.person || (i % 2 ? 'mira' : q.id === 'gate' ? 'gan' : 'toma'), title: i === 0 ? `依頼の報告 · ${q.name}` : q.id === 'newdawn' ? '海の向こうの灯と、まだない明日' : q.id === 'sixlights' ? '第一部 · 六つの理石' : CHAPTERS[q.chapter].title, text })), onDone);
+    this.dialogue(q.report.map((text, i) => ({ person: q.person || (i % 2 ? 'mira' : q.id === 'gate' ? 'gan' : 'toma'), title: i === 0 ? `依頼の報告 · ${q.name}` : q.id==='worldweave'?'第三部 · 種を運ぶ者たち':q.id === 'newdawn' ? '海の向こうの灯と、まだない明日' : q.id === 'sixlights' ? '第一部 · 六つの理石' : CHAPTERS[q.chapter].title, text })), onDone);
   }
   dialogue(pages, onDone = () => {}) {
     let at = 0;

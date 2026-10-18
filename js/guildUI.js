@@ -23,7 +23,7 @@ export class GuildUI {
   }
   anomaly(body) {
     if(!this.a.firstArcDone){body.innerHTML=`<div class="guild-locked"><span>◇</span><h3>六つの理石の先に</h3><p>第6章をクリアすると異変討究が開放されます。個体ごとにLv.1から挑戦し、Lv.20を目指す特別な狩りです。勲章と古代核が手に入り、装具をさらに強化できます。</p></div>`;return;}
-    const choices=MONSTER_QUESTS.filter(q=>this.s.journal[q.enemy]);
+    const choices=MONSTER_QUESTS.filter(q=>!q.small&&this.s.journal[q.enemy]);
     if(!choices.length){body.innerHTML='<div class="guild-locked"><h3>討究する魔獣を探そう</h3><p>世界地図から依頼へ出発すると、その魔獣が討究に追加されます。</p></div>';return;}
     if(!choices.some(q=>q.enemy===this.enemy))this.enemy=choices[0].enemy;
     const q=choices.find(q=>q.enemy===this.enemy), c=CHAPTERS[q.chapter], high=this.s.anomalies[this.enemy]||0, max=Math.min(20,high+1);
